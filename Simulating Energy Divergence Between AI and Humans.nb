@@ -1,0 +1,86 @@
+Notebook[{Cell[
+CellGroupData[{Cell[
+BoxData[{RowBox[{"(* ::Section:: *)\n(* Simulated Energy Divergence Monitor: AI vs. Human Usage *)\n\n(* ::Text:: *)\n(* This code simulates energy consumption over time for two agents: AI and humans. *)\n\n(* ::Text:: *)\n(* It is meant as a conceptual illustration of how an AI regulator might monitor resource imbalance or hoarding behavior. *)\n\n(* ::Text:: *)\n(* \:26a0\:fe0f Disclaimer: This is an artificial simulation. No real data is being used. The aim is to motivate a framework for future monitoring logic, not to make empirical claims. *)\n\n(* ::Subsection:: *)\n(* Parameters and Simulation *)\n\nSeedRandom[42]; (* For reproducibility *)"}],"\n\n",RowBox[
+{"timeSteps = 50;"}],"\n\n",RowBox[{"(* Simulated base usage profiles (in arbitrary energy units) *)\nhumanBase = Table[RandomReal[{1.0, 1.3}], {timeSteps}];"}],"\n",RowBox[
+{"aiBase = Table[RandomReal[{1.1, 1.4}], {timeSteps}];"}],"\n\n",RowBox[{"(* Optionally add a resource-hoarding trend to AI *)\naiTrend = Table[0.02 t, {t, 0, timeSteps - 1}];"}],"\n",RowBox[
+{"aiUsage = aiBase + aiTrend;"}],"\n\n",RowBox[{"(* Human energy usage remains noisy but flat *)\nhumanUsage = humanBase;"}],"\n\n",RowBox[
+{"(* ::Subsection:: *)\n(* Plot Energy Usage Over Time *)\n\nListLinePlot[\n  {humanUsage, aiUsage},\n  PlotLegends \[Rule] {\"Humans\", \"AI\"},\n  PlotLabel \[Rule] \"Simulated Energy Usage Over Time\",\n  AxesLabel \[Rule] {\"Time\", \"Energy Units\"},\n  PlotStyle \[Rule] {Blue, Red},\n  GridLines \[Rule] Automatic\n]"}],"\n\n",RowBox[
+{"(* ::Subsection:: *)\n(* Compute Divergence: \[CapitalDelta]E(t) = E_AI(t) - E_H(t) *)\n\ndeltaEnergy = aiUsage - humanUsage;"}],"\n\n",RowBox[
+{"ListLinePlot[\n  deltaEnergy,\n  PlotLabel \[Rule] \"Energy Usage Divergence: \[CapitalDelta]E(t)\",\n  AxesLabel \[Rule] {\"Time\", \"\[CapitalDelta]E = E_AI - E_H\"},\n  PlotStyle \[Rule] Orange,\n  Epilog \[Rule] {Dashed, Red, Line[{{0, 0.5}, {timeSteps, 0.5}}]},\n  GridLines \[Rule] Automatic\n]"}],"\n\n",RowBox[
+{"(* ::Subsection:: *)\n(* Threshold-based Alerting *)\n\nthresholdDelta = 0.5;"}],"\n",RowBox[
+{"countOverThreshold = Count[deltaEnergy, x_ /; x > thresholdDelta];"}],"\n\n",RowBox[
+{"Print[\"\|01f50e Number of time steps where \[CapitalDelta]E(t) > \", thresholdDelta, \": \", countOverThreshold];"}],"\n\n",RowBox[
+{"If[countOverThreshold > 5,\n  Print[\"\:26a0\:fe0f Sustained energy dominance by AI detected! Possible resource hoarding.\"],\n  Print[\"\:2705 Energy usage appears balanced within expected fluctuations.\"]\n];\n"}]}],
+"Input",CellLabel -> "In[36]:= ",ExpressionUUID -> "7846747b-1d24-4dae-a2c6-59149a69665c"],Cell[
+BoxData[
+TemplateBox[{GraphicsBox[{{},{{{},{},TagBox[{Hue[0.67`,0.6`,0.6`],Directive[PointSize[
+NCache[Rational[1,72],0.013888888888888888`]],AbsoluteThickness[2],RGBColor[0,0,1]],LineBox[
+CompressedData["1:eJxTTMoPSmViYGAwAmIQDQEf7H0ubjOP4v5kDxVw6CoTdKh98BHK53BQ8uSdUrUKxhdwOBT/rrRPF6ZexOHHsR8ftVbD+BIORndlT4Qkw9TLOFxqaQk+kgPjKzh09vNYL/r7AcpXcvjZVdk9sR8mr+LQtu5PBeuaL1C+mkPk3kwDJjuYvIbD9naz/71LYPZpOYTlTb+XVvgZytdxcDfzPv9pHoyv5xDDsj7ESBFmnoFDn3Z4mNBJGN/QYY2Xc05MD0y9kcOZUukiFX2Y+4wd0rcsjNc/B7PfxIH10xbOH9kwvqmDRom9yO8OmHvMHG7YXY8OeAXjmzscnDp/QVQozD4Lh62F+x+yc8L4lg6t+0/2ZDrA+FYOaxYe+bu2Habf2uG2UvGXextgfBsHg0VJW9/mw9TbOhyTiZX4wAhzr52DEUvConVBMHl7h2Pf9ilNOgxzr4NDzhw1zqsBUH6Dg8OENs3m9Rtg6h0dpFJ2zuqeA+U3ODo0PNBK8fWB2e/kkNPV7y4oDJN3cvhzUevMuo0w850dQvb3zyi8Bg3PBmeHI1tYfrYdhMm7OKTdT1DW74XJuzh8EjVcrncKFv6uDhPWxHKuvg+Td3WIk/d6zjgRZr+bwxszFse7J6H+bXBzeGmQ1MG6D2a+u0NUurvoL0Wo+gZ3hw7pIzoJi2HyHg6bNm312PgdZr6HQ6HIgbB3tTDzPR1edLP1XrD4Yg8A7mruQg=="]]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#1"]]],TagBox[{Hue[0.9060679774997897`,
+0.6`,0.6`],Directive[PointSize[NCache[Rational[1,72],0.013888888888888888`]],AbsoluteThickness[
+2],RGBColor[1,0,0]],LineBox[CompressedData["1:eJw1zl9IU2EYBvCjUHihy6SLwMppOm2KbHNbK2fncW7TgRWLRAp2UdtqibNQ80JhjqiwFCq7GBp0VQpOLIlcJqtsoU6FKDV0OIrASCmwVk3dHyv83gOHw+88z/t+X+bZiyesiRzHyf69/79bzypfz+eIffO/ePYDk1VD18N1f5iTsJISPdmnDjGnQlTU1lt84zfzLpgC40sPO6m/G5ZCU6vdT94DiTTrvXuF+kLYXnm7jsnXmLNg2rnXsVBMzoZtlC9vmKb7iPCuSRfx2mhfHvbLQm8Xl9eZxTA7eqpbRmm+ACV5m8ab28PMhWj/vKy/ECJLkP6d2/YjQJbCty/c3O2ieRkyxT8TCkY2mIvwYskQtMvJcojPPx27HyUrUMtf2YhPRZmVmBAcEMw1R5gPoqrdsvq8k+6rgjx4SzLIx5gPwfPAfPmRkvYdRotB8+TqOO0rhi253984TX01vg64mh7L48wlyB1rrPdco/4RdCzs6I7lUp/Ha6ljUTNHfeDSbIbJNby5ZSegru6aGr5N/VJU5rTGGmRsn7MUZu1xr0jNYSvXYFBh9dzzMTs1mI8kqxr0NF+GT4b5N+kfKC9DTX7+5J2PlGvRk7GsOqWkXIv+gRmhMC2B7dchtdZijI5QrsOZhJfWtTidr0dl87PsJD/dX4+UQNB91E3z5ZhIm2k7J2R2lsMomIKiLpHlFciq6XUP9TE7K2DH+ti30zRvwN0vC0sdsxz+Ak7Q6K0="]]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#2"]]]}},{{},{}}},{DisplayFunction -> Identity,DisplayFunction -> Identity,AspectRatio -> NCache[
+Power[GoldenRatio,-1],0.6180339887498948`],Axes -> {True,True},AxesLabel -> {FormBox[
+TagBox["\"Time\"",HoldForm],TraditionalForm],FormBox[TagBox["\"Energy Units\"",HoldForm],
+TraditionalForm]},AxesOrigin -> {0.`,0},RuleDelayed[DisplayFunction,Identity],Frame -> {{False,False},{False,False}},FrameLabel -> {{None,None},{None,None}},FrameTicks -> {{Automatic,Automatic},{Automatic,Automatic}},GridLines -> {Automatic,Automatic},GridLinesStyle -> Directive[
+GrayLevel[0.5`,0.4`]],Method -> CompressedData["1:eJzlVk1IVFEUnjEz037MIiyoqAikTQtBaGE30xqFRsd55qpFz5n7nJtv3p3ufS9mDFoELYJ2tSmiqBbRDy1Cw4I2LYqyH4vsxx/SslSkNIwgMOjc9+bfcUx6rbrwHufde893vnvOefecjc3UqyxxOBw8F157CdeVnNiX11CxVAhCZZhwj+z3E61FcYrVPHhJPlnFfnZk1U3XUNtplKa2CoRqrMiGqu+ihuaXWUTSIyrmiwWeodOgrBNfmtLahJKLyaEA8fFaTcdM9umEasqCLDQXgdCEGYd9rMwcU+mUikFoBKxWNzU49lBOTNScZFRTaGQG5gtB2COrHGcwtFtRsE/nWQmJc9aQloAKj255bZadwhIDb1Ai5tMWlyXDeCjR/gJLUKpmNKQSDfPUc2dwlcIwVigLVhmMU+amfhx3TgbckCr7cBBrelZcQT0sCbdVqmqGtYgkPuuolm6iKJEZbswDZipZjlghwJo5VQ0dm/6RSBsmeTNPnwThUaluQSyfSdb0EmEQYHIYWyHOFxiuXVVUpYx1rj8+3tD5DEXT7CNiZ8+IMYZmEmqEFG4FZ/OkcMyFr5jjK2LXvr10NxcNI1ZR8OZyqOK+TfgbBP31Ayhq6DNiQ23iH35sE/6rjh879h3/glj/tgs3Sm6+RazU5bx04IFd+J+6N/X9PPoBMa8ZicFYIMZtwvd2DOS+bx9F7Fz9uuunz/chNrnmRHd++V2b8K1seYeiNyfE12GOSZvwY2hRYTQmgL6N/MdQ4iBWIEZt4j99VeQ9uOXpEzGG7eZfY6Y75Kcl9MTyp8sm/lu3b6kuvgJu2dnzvcHVbnt+0sKLSw9unEAsUDU9cmwY7p/enudLeh/esgn/pONQ5Z1TI4jdnvr1Kjz2GrG95XX7u0oGbcK/5Cnb3DvxInbtwP3T0v/oXmm47w/x4xf6UmEI+giizbM3Ee2OV9Za8Gx6VmZfTddbCUJ9SCdBqDCihLhl1gotx2xlUWyv1Xyq4cfxCg7WpAKYh6LKoFhKOL1CptT7uTumeVJaLUxTyuDUso55I6Wq0KZa9nZguRlSDjU+ssfQrGbMGQtsfCYVwRn/YVM2xWdq/XB+okcS7YwE/IkzJc4emekZNpA4+D+zkCHfVprOCxHsb5JVA/9PnvgNvJcw7Q=="],PlotLabel -> FormBox[
+"\"Simulated Energy Usage Over Time\"",TraditionalForm],PlotRange -> {{0.`,50.`},{0,2.3333562288728595`}},PlotRangeClipping -> True,PlotRangePadding -> {{Scaled[
+0.02`],Scaled[0.02`]},{Scaled[0.02`],Scaled[0.05`]}},Ticks -> {Automatic,Automatic}}],FormBox[
+FormBox[TemplateBox[{"\"Humans\"","\"AI\""},"LineLegend",DisplayFunction -> Function[
+FormBox[StyleBox[StyleBox[PaneBox[TagBox[GridBox[{{TagBox[GridBox[{{GraphicsBox[{{Directive[
+EdgeForm[Directive[Opacity[0.3`],GrayLevel[0]]],PointSize[0.5`],AbsoluteThickness[
+2],RGBColor[0,0,1]],{LineBox[{{0,12.5`},{20,12.5`}}]}},{Directive[EdgeForm[Directive[
+Opacity[0.3`],GrayLevel[0]]],PointSize[0.5`],AbsoluteThickness[2],RGBColor[0,0,1]],{}}},
+AspectRatio -> Full,ImageSize -> {20,12.5`},PlotRangePadding -> None,ImagePadding -> Automatic,
+BaselinePosition -> (Scaled[0.18000000000000002`] -> Baseline)],Slot[1]},{GraphicsBox[
+{{Directive[EdgeForm[Directive[Opacity[0.3`],GrayLevel[0]]],PointSize[0.5`],AbsoluteThickness[
+2],RGBColor[1,0,0]],{LineBox[{{0,12.5`},{20,12.5`}}]}},{Directive[EdgeForm[Directive[
+Opacity[0.3`],GrayLevel[0]]],PointSize[0.5`],AbsoluteThickness[2],RGBColor[1,0,0]],{}}},
+AspectRatio -> Full,ImageSize -> {20,12.5`},PlotRangePadding -> None,ImagePadding -> Automatic,
+BaselinePosition -> (Scaled[0.18000000000000002`] -> Baseline)],Slot[2]}},GridBoxAlignment -> {"Columns" -> {Center,Left},"Rows" -> {{Baseline}}},
+AutoDelete -> False,GridBoxDividers -> {"Columns" -> {{False}},"Rows" -> {{False}}},
+GridBoxItemSize -> {"Columns" -> {{All}},"Rows" -> {{All}}},GridBoxSpacings -> {"Columns" -> {{0.5`}},"Rows" -> {{0.8`}}}],
+"Grid"]}},GridBoxAlignment -> {"Columns" -> {{Left}},"Rows" -> {{Top}}},AutoDelete -> False,
+GridBoxItemSize -> {"Columns" -> {{Automatic}},"Rows" -> {{Automatic}}},GridBoxSpacings -> {"Columns" -> {{1}},"Rows" -> {{0}}}],
+"Grid"],Alignment -> Left,AppearanceElements -> None,ImageMargins -> {{5,5},{5,5}},
+ImageSizeAction -> "ResizeToFit"],LineIndent -> 0,StripOnInput -> False],{FontFamily -> "Arial"},
+Background -> Automatic,StripOnInput -> False],TraditionalForm]],RuleDelayed[InterpretationFunction,
+Function[RowBox[{"LineLegend","[",RowBox[{RowBox[{"{",RowBox[{RowBox[{"Directive","[",RowBox[
+{RowBox[{"PointSize","[",FractionBox["1","72"],"]"}],",",RowBox[{"AbsoluteThickness","[","2","]"}],",",TemplateBox[
+Association["color" -> RGBColor[0,0,1]],"RGBColorSwatchTemplate"]}],"]"}],",",RowBox[
+{"Directive","[",RowBox[{RowBox[{"PointSize","[",FractionBox["1","72"],"]"}],",",RowBox[
+{"AbsoluteThickness","[","2","]"}],",",TemplateBox[Association["color" -> RGBColor[
+1,0,0]],"RGBColorSwatchTemplate"]}],"]"}]}],"}"}],",",RowBox[{"{",RowBox[{Slot[1],",",Slot[
+2]}],"}"}],",",RowBox[{"LegendMarkers","\[Rule]",RowBox[{"{",RowBox[{RowBox[{"{",RowBox[
+{"False",",","Automatic"}],"}"}],",",RowBox[{"{",RowBox[{"False",",","Automatic"}],"}"}]}],"}"}]}],",",RowBox[
+{"Joined","\[Rule]",RowBox[{"{",RowBox[{"True",",","True"}],"}"}]}],",",RowBox[{"LabelStyle","\[Rule]",RowBox[
+{"{","}"}]}],",",RowBox[{"LegendLayout","\[Rule]","\"Column\""}]}],"]"}]]],Editable -> True],
+TraditionalForm],TraditionalForm]},"Legended",DisplayFunction -> Function[GridBox[
+{{TagBox[ItemBox[PaneBox[TagBox[Slot[1],"SkipImageSizeLevel"],Alignment -> {Center,Baseline},
+BaselinePosition -> Baseline],DefaultBaseStyle -> "Labeled"],"SkipImageSizeLevel"],ItemBox[
+Slot[2],DefaultBaseStyle -> "LabeledLabel"]}},GridBoxAlignment -> {"Columns" -> {{Center}},"Rows" -> {{Center}}},
+AutoDelete -> False,GridBoxItemSize -> Automatic,BaselinePosition -> {1,1}]],InterpretationFunction -> Function[
+RowBox[{"Legended","[",RowBox[{Slot[1],",",RowBox[{"Placed","[",RowBox[{Slot[2],",","After"}],"]"}]}],"]"}]],
+Editable -> True],StandardForm],"Output",CellLabel -> "Out[43]= ",ExpressionUUID -> "94c28d84-f01b-4a3f-b2e1-24aa2bebe276"],Cell[
+BoxData[
+GraphicsBox[{{},{{{},{},TagBox[{Hue[0.67`,0.6`,0.6`],Directive[PointSize[NCache[Rational[
+1,60],0.016666666666666666`]],AbsoluteThickness[2],RGBColor[1,0.5`,0]],LineBox[CompressedData[
+"1:eJw1zntIU2EYBvBTRFqEBSleiHQaYSmla7nmVnucl1ksW1Zo0YVG4bSbIoshs5alKMryUmHMS9of1cJwMKhA0krsYMOh1Zbiai1NnTMvIUmaZPieAx8fv/O853kPT3Ul/fxKhmH4S+f/vfxMSWPy8mvkF7qk9AJMYU3ImKiP7Au9wuu3EP6SvAFhxp6KbGc32R+RRm2DQ2wjB4FN+juoqv1E3gSt+eqf+t+95DDo3nYWmAcGyeGoDDZ0h5oHyFvA5JXxRuL05K1wDV+OmjR9JEei9cmMTBzgJG+HAJKhw+D2RaP1dmNAm+Q9eQe00/aq51U95Bio16VpZg0sORYnlbb4uWiunw+TuiV0fdAweReeqZTzOquLLMABD1NwkPedvBul94qtPiVD5Di4Gh+eW8P7RhZCad8ovTHL9e/Bov1BffolN1kE9k5Wc2C/gxyPhkPzOS3XuT4xQj7kmaKEP8gS5AbnFBWXcfv34k36TovBZ4y8DxbTmcl6E7dfijnNtfyzER4y4Js78+hWr3fZeiCz6Wulfwc3nwB2VWB5U8YXyhNQoRyJZjJpnpHB+1qTphilPr0ML450Okq3jVCeiM+PE9zlT8cpT4RiQtEcIBmlPAnWdnfd6nb6X/2SDV5BhIXrT0ZYhp1vjOG+TwbblcU6+39SnoKOEvW7Y4sTlKcg9uZx293aacrliHt1eqFv8xTlcoSs6Du6VvSL8lRU8+77tZ2ieX0qsi/yheNCmmf2Q1d0orDa5ZH+A6rG7X0="]]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#1"]]]}},{{},{}}},{DisplayFunction -> Identity,DisplayFunction -> Identity,AspectRatio -> NCache[
+Power[GoldenRatio,-1],0.6180339887498948`],Axes -> {True,True},AxesLabel -> {FormBox[
+TagBox["\"Time\"",HoldForm],TraditionalForm],FormBox[TagBox["\"\[CapitalDelta]E = E_AI - E_H\"",
+HoldForm],TraditionalForm]},AxesOrigin -> {0.`,0},RuleDelayed[DisplayFunction,Identity],Epilog -> {Dashing[
+{Small,Small}],RGBColor[1,0,0],LineBox[{{0,0.5`},{50,0.5`}}]},Frame -> {{False,False},{False,False}},FrameLabel -> {{None,None},{None,None}},FrameTicks -> {{Automatic,Automatic},{Automatic,Automatic}},GridLines -> {Automatic,Automatic},GridLinesStyle -> Directive[
+GrayLevel[0.5`,0.4`]],Method -> CompressedData["1:eJzlVk1IVFEUnjEz037MIiyoqAikTQtBaGE30xqFRsd55qpFz5n7nJtv3p3ufS9mDFoELYJ2tSmiqBbRDy1Cw4I2LYqyH4vsxx/SslSkNIwgMOjc9+bfcUx6rbrwHufde893vnvOefecjc3UqyxxOBw8F157CdeVnNiX11CxVAhCZZhwj+z3E61FcYrVPHhJPlnFfnZk1U3XUNtplKa2CoRqrMiGqu+ihuaXWUTSIyrmiwWeodOgrBNfmtLahJKLyaEA8fFaTcdM9umEasqCLDQXgdCEGYd9rMwcU+mUikFoBKxWNzU49lBOTNScZFRTaGQG5gtB2COrHGcwtFtRsE/nWQmJc9aQloAKj255bZadwhIDb1Ai5tMWlyXDeCjR/gJLUKpmNKQSDfPUc2dwlcIwVigLVhmMU+amfhx3TgbckCr7cBBrelZcQT0sCbdVqmqGtYgkPuuolm6iKJEZbswDZipZjlghwJo5VQ0dm/6RSBsmeTNPnwThUaluQSyfSdb0EmEQYHIYWyHOFxiuXVVUpYx1rj8+3tD5DEXT7CNiZ8+IMYZmEmqEFG4FZ/OkcMyFr5jjK2LXvr10NxcNI1ZR8OZyqOK+TfgbBP31Ayhq6DNiQ23iH35sE/6rjh879h3/glj/tgs3Sm6+RazU5bx04IFd+J+6N/X9PPoBMa8ZicFYIMZtwvd2DOS+bx9F7Fz9uuunz/chNrnmRHd++V2b8K1seYeiNyfE12GOSZvwY2hRYTQmgL6N/MdQ4iBWIEZt4j99VeQ9uOXpEzGG7eZfY6Y75Kcl9MTyp8sm/lu3b6kuvgJu2dnzvcHVbnt+0sKLSw9unEAsUDU9cmwY7p/enudLeh/esgn/pONQ5Z1TI4jdnvr1Kjz2GrG95XX7u0oGbcK/5Cnb3DvxInbtwP3T0v/oXmm47w/x4xf6UmEI+giizbM3Ee2OV9Za8Gx6VmZfTddbCUJ9SCdBqDCihLhl1gotx2xlUWyv1Xyq4cfxCg7WpAKYh6LKoFhKOL1CptT7uTumeVJaLUxTyuDUso55I6Wq0KZa9nZguRlSDjU+ssfQrGbMGQtsfCYVwRn/YVM2xWdq/XB+okcS7YwE/IkzJc4emekZNpA4+D+zkCHfVprOCxHsb5JVA/9PnvgNvJcw7Q=="],PlotLabel -> FormBox[
+"\"Energy Usage Divergence: \[CapitalDelta]E(t)\"",TraditionalForm],PlotRange -> {{0.`,50.`},{0,1.201425868348514`}},PlotRangeClipping -> True,PlotRangePadding -> {{Scaled[
+0.02`],Scaled[0.02`]},{Scaled[0.02`],Scaled[0.05`]}},Ticks -> {Automatic,Automatic}}],
+StandardForm],"Output",CellLabel -> "Out[45]= ",ExpressionUUID -> "00d1b0a3-1148-4473-a50a-5837784cdb63"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\|01f50e Number of time steps where \[CapitalDelta]E(t) > \"","\[InvisibleSpace]","0.5`","\[InvisibleSpace]","\": \"","\[InvisibleSpace]","30"}],
+SequenceForm["\|01f50e Number of time steps where \[CapitalDelta]E(t) > ",0.5`,": ",
+30],Editable -> False],StandardForm],"Print",ExpressionUUID -> "037e89ce-55d1-45b8-bc9e-49dd8730b81d"],Cell[
+BoxData[
+"\"\:26a0\:fe0f Sustained energy dominance by AI detected! Possible resource hoarding.\"",
+StandardForm],"Print",ExpressionUUID -> "98b1490a-3b00-48fe-8d88-11ff2f2f32fc"]},
+Open],ExpressionUUID -> "692a29f8-0bba-460e-9583-148bcb2c5478"]},StyleDefinitions -> "Default.nb",
+FrontEndVersion -> "14.2 for Wolfram Cloud 1.72 (April 27, 2025)"]

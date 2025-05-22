@@ -1,0 +1,2045 @@
+Notebook[{Cell[
+CellGroupData[{Cell[
+BoxData[{RowBox[{RowBox[{"(*",RowBox[{"Import"," ","all"," ","six"," ","texts"}],"*)"}],RowBox[
+{RowBox[{RowBox[{"textList","=",RowBox[{"{",RowBox[{RowBox[{"Import","[",RowBox[{"\"/Downloads/mein_kampf.txt\"",",","\"Text\""}],"]"}],",",RowBox[
+{"Import","[",RowBox[{"\"/Downloads/art_of_war.txt\"",",","\"Text\""}],"]"}],",",RowBox[
+{"Import","[",RowBox[{"\"/Downloads/the_prince.txt\"",",","\"Text\""}],"]"}],",",RowBox[
+{"Import","[",RowBox[{"\"/Downloads/on_war.txt\"",",","\"Text\""}],"]"}],",",RowBox[
+{"Import","[",RowBox[{"\"/Downloads/utilitarianism.txt\"",",","\"Text\""}],"]"}],",",RowBox[
+{"Import","[",RowBox[{"\"/Downloads/civil_disobedience.txt\"",",","\"Text\""}],"]"}]}],"}"}]}],";"}],"\[IndentingNewLine]"}]}],"\n",RowBox[
+{RowBox[{RowBox[{"titles","=",RowBox[{"{",RowBox[{"\"Mein Kampf\"",",","\"The Art of War\"",",","\"The Prince\"",",","\"On War\"",",","\"Utilitarianism\"",",","\"Civil Disobedience\""}],"}"}]}],";"}],"\[IndentingNewLine]","\[IndentingNewLine]",RowBox[
+{"(*",RowBox[{"Preprocess"," ","and"," ","remove"," ","stopwords"}],"*)"}],"\[IndentingNewLine]",RowBox[
+{RowBox[{"customStopwords","=",RowBox[{"{",RowBox[{"\"project\"",",","\"gutenberg\"",",","\"ebook\"",",","\"www\"",",","\"http\"",",","\"copyright\"",",","\"digitized\"",",","\"title\"",",","\"chapter\"",",","\"book\"",",","\"page\""}],"}"}]}],";"}]}],"\n",RowBox[
+{"\[IndentingNewLine]",RowBox[{RowBox[{RowBox[{RowBox[{"cleanWords","[","text_","]"}],":=",RowBox[
+{"DeleteCases","[",RowBox[{RowBox[{"DeleteStopwords","[",RowBox[{"ToLowerCase","[",RowBox[
+{"TextWords","[","text","]"}],"]"}],"]"}],",",RowBox[{"Alternatives","@@","customStopwords"}]}],"]"}]}],";"}],"\[IndentingNewLine]","\[IndentingNewLine]",RowBox[
+{RowBox[{"Quiet","[",RowBox[{RowBox[{"wordLists","=",RowBox[{"cleanWords","/@","textList"}]}],";"}],"]"}],";"}]}]}],"\n",RowBox[
+{RowBox[{"(*",RowBox[{"Sequential"," ","labeled"," ","WordClouds"}],"*)"}],"\n",RowBox[
+{RowBox[{"Do","[",RowBox[{RowBox[{"Print","[",RowBox[{"Labeled","[",RowBox[{RowBox[
+{"WordCloud","[",RowBox[{RowBox[{"wordLists","[",RowBox[{"[","i","]"}],"]"}],",",RowBox[
+{"ImageSize","\[Rule]","Large"}]}],"]"}],",",RowBox[{"Style","[",RowBox[{RowBox[{"titles","[",RowBox[
+{"[","i","]"}],"]"}],",","Bold",",","14"}],"]"}],",","Top"}],"]"}],"]"}],",",RowBox[
+{"{",RowBox[{"i",",",RowBox[{"Length","[","wordLists","]"}]}],"}"}]}],"]"}],"\[IndentingNewLine]",RowBox[
+{"(*","*)"}],"\[IndentingNewLine]"}]}],"\n",RowBox[{RowBox[{"(*",RowBox[{"Word"," ","frequency"," ","vectors"," ","from"," ","earlier"," ","steps"}],"*)"}],RowBox[
+{RowBox[{"wordFreqs","=",RowBox[{"WordCounts","/@","textList"}]}],";"}]}],"\n",RowBox[
+{RowBox[{"commonVocab","=",RowBox[{"Union","@@",RowBox[{"(",RowBox[{"Keys","/@","wordFreqs"}],")"}]}]}],";"}],"\n",RowBox[
+{RowBox[{"vectors","=",RowBox[{"Table","[",RowBox[{RowBox[{"Lookup","[",RowBox[{RowBox[
+{"wordFreqs","[",RowBox[{"[","i","]"}],"]"}],",","commonVocab",",","0"}],"]"}],",",RowBox[
+{"{",RowBox[{"i",",",RowBox[{"Length","[","wordFreqs","]"}]}],"}"}]}],"]"}]}],";"}],"\n",RowBox[
+{RowBox[{RowBox[{"normVectors","=",RowBox[{"Normalize","/@","vectors"}]}],";"}],"\[IndentingNewLine]","\[IndentingNewLine]",RowBox[
+{"(*",RowBox[{"PCA"," ","embedding"}],"*)"}]}],"\n",RowBox[{RowBox[{"embedPCA","=",RowBox[
+{"DimensionReduce","[",RowBox[{"normVectors",",","2",",",RowBox[{"Method","\[Rule]","\"PrincipalComponentsAnalysis\""}]}],"]"}]}],";"}],"\n",RowBox[
+{"\[IndentingNewLine]",RowBox[{RowBox[{RowBox[{"pcaPlot","=",RowBox[{"ListPlot","[",RowBox[
+{RowBox[{"Callout","@@@",RowBox[{"Transpose","[",RowBox[{"{",RowBox[{"embedPCA",",","titles"}],"}"}],"]"}]}],",",RowBox[
+{"PlotStyle","\[Rule]",RowBox[{"PointSize","[","Large","]"}]}],",",RowBox[{"AxesLabel","\[Rule]",RowBox[
+{"{",RowBox[{"\"PCA-1\"",",","\"PCA-2\""}],"}"}]}],",",RowBox[{"PlotLabel","\[Rule]","\"Document Embedding via PCA\""}],",",RowBox[
+{"PlotTheme","\[Rule]","\"Detailed\""}]}],"]"}]}],";"}],"\[IndentingNewLine]","\[IndentingNewLine]",RowBox[
+{"(*",RowBox[{"UMAP"," ","embedding"}],"*)"}]}]}],"\n",RowBox[{RowBox[{"embedUMAP","=",RowBox[
+{"DimensionReduce","[",RowBox[{"normVectors",",","2",",",RowBox[{"Method","\[Rule]","\"UMAP\""}]}],"]"}]}],";"}],"\n",RowBox[
+{"\[IndentingNewLine]",RowBox[{RowBox[{RowBox[{"umapPlot","=",RowBox[{"ListPlot","[",RowBox[
+{RowBox[{"Callout","@@@",RowBox[{"Transpose","[",RowBox[{"{",RowBox[{"embedUMAP",",","titles"}],"}"}],"]"}]}],",",RowBox[
+{"PlotStyle","\[Rule]",RowBox[{"PointSize","[","Large","]"}]}],",",RowBox[{"AxesLabel","\[Rule]",RowBox[
+{"{",RowBox[{"\"UMAP-1\"",",","\"UMAP-2\""}],"}"}]}],",",RowBox[{"PlotLabel","\[Rule]","\"Document Embedding via UMAP\""}],",",RowBox[
+{"PlotTheme","\[Rule]","\"Detailed\""}]}],"]"}]}],";"}],"\[IndentingNewLine]","\[IndentingNewLine]",RowBox[
+{"(*",RowBox[{"Display"," ","plots"," ","in"," ","sequence"}],"*)"}]}]}],"\n",RowBox[
+{"Column","[",RowBox[{"{",RowBox[{"pcaPlot",",","umapPlot"}],"}"}],"]"}],"\n",RowBox[
+{RowBox[{RowBox[{"{",RowBox[{"components",",","explained"}],"}"}],"=",RowBox[{"PrincipalComponents","[",RowBox[
+{"normVectors",",",RowBox[{"Method","\[Rule]","\"Correlation\""}]}],"]"}]}],";"}],"\n",RowBox[
+{RowBox[{"components","[",RowBox[{"[",RowBox[{"All",",","1"}],"]"}],"]"}],"\n","\[IndentingNewLine]","\n"}]}],
+"Input",CellChangeTimes -> {{3956581302.4682426`,3956581302.468288`},{3956598171.3202553`,3956598231.1674347`},{3956598424.001871`,3956598437.394888`},{3956598829.0271`,3956598846.177546`},3956598976.240799`,{3956599055.196418`,3956599084.242495`},{3956599213.855932`,3956599228.941835`},{3956599270.816794`,3956599274.535515`},{3956599330.2822847`,3956599336.238153`},{3956599383.352706`,3956599383.921693`},{3956599559.79583`,3956599561.499057`},{3956599785.177075`,3956599862.952457`},3956599971.533372`,{3956600362.549924`,3956600364.522304`},{3956600399.61866`,3956600464.720297`},{3956600966.981555`,3956600980.607113`},3956601055.11794`,{3956602541.962422`,3956602552.6076736`},{3956604032.003215`,3956604033.3627043`},{3956604089.195837`,3956604095.975836`},{3956604176.1745996`,3956604226.41483`}},
+ExpressionUUID -> "24ab1fca-d257-49ef-8851-c81238509bd4"],Cell[
+CellGroupData[{Cell[
+BoxData[
+TemplateBox[{GraphicsBox[{StyleBox[{InsetBox[BoxData[FormBox[StyleBox["\"people\"",
+FontSize -> Scaled[0.22801302931596093`],FontColor -> RGBColor[0.24`,0.6`,0.8`],StripOnInput -> False],
+TraditionalForm]],{0,0},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"german\"",
+FontSize -> Scaled[0.1817869083325271`],FontColor -> RGBColor[0.95`,0.627`,0.1425`],
+StripOnInput -> False],TraditionalForm]],{-0.5`,47.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"movement\"",FontSize -> Scaled[0.12502553186914783`],
+FontColor -> RGBColor[0.578`,0.51`,0.85`],StripOnInput -> False],TraditionalForm]],
+{-0.5`,-48.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"state\"",FontSize -> Scaled[
+0.1701766267831995`],FontColor -> RGBColor[0.455`,0.7`,0.21`],StripOnInput -> False],
+TraditionalForm]],{-0.5`,77.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"national\"",FontSize -> Scaled[0.12137044323324842`],FontColor -> RGBColor[0.772079`,
+0.431554`,0.102387`],StripOnInput -> False],TraditionalForm]],{-0.5`,-78.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"political\"",FontSize -> Scaled[0.09879489577622258`],
+FontColor -> RGBColor[1.`,0.75`,0.`],StripOnInput -> False],TraditionalForm]],{-0.5`,104.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"time\"",FontSize -> Scaled[
+0.13298072478257597`],FontColor -> RGBColor[0.922526`,0.385626`,0.209179`],StripOnInput -> False],
+TraditionalForm]],{-0.5`,-109.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"nation\"",FontSize -> Scaled[0.10287999483987488`],FontColor -> RGBColor[0.4`,
+0.64`,1.`],StripOnInput -> False],TraditionalForm]],{79.5`,-101.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"germany\"",FontSize -> Scaled[0.07406929618043237`],FontColor -> RGBColor[
+0.9728288904374106`,0.621644452187053`,0.07336199581899142`],StripOnInput -> False],
+TraditionalForm]],{-80.5`,-98.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"great\"",FontSize -> Scaled[0.08632459337138927`],FontColor -> RGBColor[0.915`,
+0.3325`,0.2125`],StripOnInput -> False],TraditionalForm]],{-85.5`,67.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"necessary\"",FontSize -> Scaled[0.05600885821481171`],
+FontColor -> RGBColor[0.8613800418100862`,0.48092002787339083`,0.02824203762907758`],
+StripOnInput -> False],TraditionalForm]],{89.5`,64.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"world\"",FontSize -> Scaled[0.08696960901301856`],FontColor -> RGBColor[
+0.8`,0.4`,0.76`],StripOnInput -> False],TraditionalForm]],{96.5`,-67.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"policy\"",FontSize -> Scaled[0.07041420754453295`],FontColor -> RGBColor[
+0.5833680111493557`,0.4126186601628758`,0.8290799721266107`],StripOnInput -> False],
+TraditionalForm]],{80.5`,81.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"struggle\"",FontSize -> Scaled[0.05815891035357607`],FontColor -> RGBColor[0.9874666782805795`,
+0.6948333914028977`,0.033839968642435214`],StripOnInput -> False],TraditionalForm]],
+{-92.5`,-71.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"way\"",FontSize -> Scaled[
+0.08395953601874845`],FontColor -> RGBColor[0.40082222609352647`,0.5220066643438841`,
+0.85`],StripOnInput -> False],TraditionalForm]],{108.5`,22.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"individual\"",FontSize -> Scaled[0.05665387385644102`],
+FontColor -> RGBColor[0.7748409210981391`,0.358`,0.4444755060028629`],StripOnInput -> False],
+TraditionalForm]],{-0.5`,122.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"party\"",FontSize -> Scaled[0.07105922318616226`],FontColor -> RGBColor[0.28026441037696703`,
+0.715`,0.4292089322474965`],StripOnInput -> False],TraditionalForm]],{-75.5`,90.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"existence\"",FontSize -> Scaled[
+0.058373915567452514`],FontColor -> RGBColor[0.47401116530937026`,0.47809330081437784`,
+0.85`],StripOnInput -> False],TraditionalForm]],{87.5`,98.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"possible\"",FontSize -> Scaled[0.054073811289923786`],
+FontColor -> RGBColor[0.35558897405758294`,0.5505288207539337`,0.8417067688690995`],
+StripOnInput -> False],TraditionalForm]],{-79.5`,105.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"public\"",FontSize -> Scaled[0.06095397813396975`],FontColor -> RGBColor[
+0.9324333565611593`,0.5282889043741062`,0.0921900209050434`],StripOnInput -> False],
+TraditionalForm]],{-61.5`,120.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"to-day\"",FontSize -> Scaled[0.0553638425731824`],FontColor -> RGBColor[0.6184987019729621`,
+0.39212575718243875`,0.7412532450675947`],StripOnInput -> False],TraditionalForm]],
+{-61.5`,-116.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"question\"",
+FontSize -> Scaled[0.04826867051526`],FontColor -> RGBColor[0.23716678280579248`,
+0.645266573755366`,0.699600139366951`],StripOnInput -> False],TraditionalForm]],{66.5`,-120.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"organization\"",FontSize -> Scaled[
+0.040098472387955414`],FontColor -> RGBColor[0.38354466123747527`,0.5323732032575149`,
+0.85`],StripOnInput -> False],TraditionalForm]],{-4.5`,17.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"general\"",FontSize -> Scaled[0.05192375915115942`],FontColor -> RGBColor[
+0.8564488486273256`,0.42032672705901153`,0.06612212156831418`],StripOnInput -> False],
+TraditionalForm]],{75.5`,113.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"means\"",FontSize -> Scaled[0.06546908762537491`],FontColor -> RGBColor[0.28240003484173815`,
+0.6090799721266095`,0.7538800418100857`],StripOnInput -> False],TraditionalForm]],
+{113.5`,-31.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"propaganda\"",
+FontSize -> Scaled[0.04031347760183185`],FontColor -> RGBColor[0.9046334610863751`,
+0.334573307782725`,0.22977756485604156`],StripOnInput -> False],TraditionalForm]],
+{-15.5`,-31.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"years\"",FontSize -> Scaled[
+0.05923393642295827`],FontColor -> RGBColor[0.8857244243136628`,0.3764133635295058`,
+0.1393110607841571`],StripOnInput -> False],TraditionalForm]],{-111.5`,19.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"new\"",FontSize -> Scaled[0.08653959858526569`],
+FontColor -> RGBColor[0.637`,0.65`,0.`],StripOnInput -> False],TraditionalForm]],
+{107.5`,38.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"power\"",FontSize -> Scaled[
+0.053858806076047344`],FontColor -> RGBColor[0.7132613816472081`,0.358`,0.5392132590042952`],
+StripOnInput -> False],TraditionalForm]],{52.5`,-30.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"purpose\"",FontSize -> Scaled[0.043968566237731266`],
+FontColor -> RGBColor[0.8493197142977551`,0.7407577460330839`,0.`],StripOnInput -> False],
+TraditionalForm]],{-111.5`,33.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"government\"",FontSize -> Scaled[0.033433310757785877`],FontColor -> RGBColor[
+0.2198892179497479`,0.6590886256402017`,0.6788670615396974`],StripOnInput -> False],
+TraditionalForm]],{-111.5`,-46.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"work\"",FontSize -> Scaled[0.059663946850711136`],FontColor -> RGBColor[0.6753413537738198`,
+0.3589675436319385`,0.5991466155654507`],StripOnInput -> False],TraditionalForm]],
+{106.5`,-49.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"certain\"",
+FontSize -> Scaled[0.053858806076047344`],FontColor -> RGBColor[0.9637822400302223`,
+0.5764112001511111`,0.0977879519184`],StripOnInput -> False],TraditionalForm]],{-0.5`,-131.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"interests\"",FontSize -> Scaled[
+0.04568860794874276`],FontColor -> RGBColor[0.9038177251280404`,0.3492734123079395`,
+0.18454431282010084`],StripOnInput -> False],TraditionalForm]],{-115.5`,44.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"masses\"",FontSize -> Scaled[0.05622386342868815`],
+FontColor -> RGBColor[0.16397784358994957`,0.7038177251280403`,0.6117734123079395`],
+StripOnInput -> False],TraditionalForm]],{62.5`,124.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"present\"",FontSize -> Scaled[0.04482858709323701`],FontColor -> RGBColor[
+0.7513196300394465`,0.358`,0.48066210763162087`],StripOnInput -> False],TraditionalForm]],
+{-119.5`,0.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"importance\"",
+FontSize -> Scaled[0.0347233420410445`],FontColor -> RGBColor[0.7989994773739094`,
+0.735166608597101`,0.`],StripOnInput -> False],TraditionalForm]],{6.5`,134.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"human\"",FontSize -> Scaled[0.054503821717676655`],
+FontColor -> RGBColor[0.7678998606330495`,0.7317110956258943`,0.`],StripOnInput -> False],
+TraditionalForm]],{-50.5`,-131.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"economic\"",FontSize -> Scaled[0.03988346717407897`],FontColor -> RGBColor[0.969373377466199`,
+0.6043668873309952`,0.08269188084126262`],StripOnInput -> False],TraditionalForm]],
+{-89.5`,-87.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"towards\"",
+FontSize -> Scaled[0.04633362359037207`],FontColor -> RGBColor[0.6536293927965667`,
+0.37163285420200276`,0.6534265180085832`],StripOnInput -> False],TraditionalForm]],
+{112.5`,-85.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"fact\"",FontSize -> Scaled[
+0.0665441136947571`],FontColor -> RGBColor[0.8996399512215667`,0.7463488834690629`,
+0.`],StripOnInput -> False],TraditionalForm]],{-115.5`,-14.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"place\"",FontSize -> Scaled[0.049343696584642174`],FontColor -> RGBColor[
+0.9810598048862722`,0.7553955338762525`,0.`],StripOnInput -> False],TraditionalForm]],
+{116.5`,-15.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"men\"",FontSize -> Scaled[
+0.06611410326700422`],FontColor -> RGBColor[0.8439466852489265`,0.3467106629502147`,
+0.3309221912517893`],StripOnInput -> False],TraditionalForm]],{-116.5`,-27.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"principle\"",FontSize -> Scaled[0.0394534567463261`],
+FontColor -> RGBColor[0.845266573755366`,0.437100139366951`,0.03816643438841502`],
+StripOnInput -> False],TraditionalForm]],{46.5`,-134.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"life\"",FontSize -> Scaled[0.07084421797228584`],FontColor -> RGBColor[
+0.838355547812947`,0.44746667828057946`,0.0208888695323676`],StripOnInput -> False],
+TraditionalForm]],{-114.5`,81.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"war\"",FontSize -> Scaled[0.0736392857526795`],FontColor -> RGBColor[0.736782672705901`,
+0.358`,0.5030266573755369`],StripOnInput -> False],TraditionalForm]],{-80.5`,132.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"bourgeois\"",FontSize -> Scaled[
+0.0347233420410445`],FontColor -> RGBColor[0.15725938678540247`,0.715`,0.5857607804549424`],
+StripOnInput -> False],TraditionalForm]],{55.5`,135.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"character\"",FontSize -> Scaled[0.035798368110426686`],
+FontColor -> RGBColor[0.9840111653093676`,0.677555826546838`,0.04316985366470745`],
+StripOnInput -> False],TraditionalForm]],{-105.5`,-57.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"make\"",FontSize -> Scaled[0.05256877479278872`],FontColor -> RGBColor[
+0.37977756485605163`,0.715`,0.3025558265468435`],StripOnInput -> False],TraditionalForm]],
+{122.5`,0.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"man\"",FontSize -> Scaled[
+0.059448941636834694`],FontColor -> RGBColor[0.5407932311309059`,0.715`,0.09762679674248334`],
+StripOnInput -> False],TraditionalForm]],{-67.5`,-30.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"quite\"",FontSize -> Scaled[0.04246352974059621`],FontColor -> RGBColor[
+0.5019668524892619`,0.46131988850644284`,0.85`],StripOnInput -> False],TraditionalForm]],
+{123.5`,78.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"practical\"",
+FontSize -> Scaled[0.03364831597166232`],FontColor -> RGBColor[0.8064401951137368`,
+0.3542119609772526`,0.39343300814377197`],StripOnInput -> False],TraditionalForm]],
+{-39.5`,135.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"jew\"",FontSize -> Scaled[
+0.05106373829565367`],FontColor -> RGBColor[0.5472001045252132`,0.43417993728487203`,
+0.85`],StripOnInput -> False],TraditionalForm]],{-126.5`,59.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"order\"",FontSize -> Scaled[0.046763634018124944`],FontColor -> RGBColor[
+0.9052934053395919`,0.510195603559728`,0.06776406480563275`],StripOnInput -> False],
+TraditionalForm]],{-103.5`,114.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"long\"",FontSize -> Scaled[0.04525859752098989`],FontColor -> RGBColor[0.9784200278733908`,
+0.649600139366954`,0.058265924741844846`],StripOnInput -> False],TraditionalForm]],
+{-128.5`,-82.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"just\"",FontSize -> Scaled[
+0.04611861837649563`],FontColor -> RGBColor[0.6361597700445392`,0.7170733077827265`,
+0.`],StripOnInput -> False],TraditionalForm]],{-100.5`,-119.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"future\"",FontSize -> Scaled[0.04525859752098989`],FontColor -> RGBColor[
+0.428777913273419`,0.5052332520359486`,0.85`],StripOnInput -> False],TraditionalForm]],
+{89.5`,-133.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"jewish\"",
+FontSize -> Scaled[0.036228378538179555`],FontColor -> RGBColor[0.4567336004533182`,
+0.4884598397280091`,0.85`],StripOnInput -> False],TraditionalForm]],{-124.5`,96.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"finally\"",FontSize -> Scaled[
+0.042248524526719775`],FontColor -> RGBColor[0.9930578157165594`,0.7227890785827968`,
+0.01874389756528967`],StripOnInput -> False],TraditionalForm]],{116.5`,108.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"social\"",FontSize -> Scaled[0.04461358187936058`],
+FontColor -> RGBColor[0.2187618985811806`,0.715`,0.5074848563512248`],StripOnInput -> False],
+TraditionalForm]],{-91.5`,-133.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"members\"",FontSize -> Scaled[0.03429333161329162`],FontColor -> RGBColor[0.7042770479220728`,
+0.358`,0.5530353108891188`],StripOnInput -> False],TraditionalForm]],{113.5`,-119.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"course\"",FontSize -> Scaled[
+0.043323550596101955`],FontColor -> RGBColor[0.3103557220216354`,0.5867154223826917`,
+0.7874268664259625`],StripOnInput -> False],TraditionalForm]],{97.5`,134.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"reason\"",FontSize -> Scaled[0.04353855580997839`],
+FontColor -> RGBColor[0.8607200975568693`,0.34335598048862614`,0.30296650407188447`],
+StripOnInput -> False],TraditionalForm]],{117.5`,120.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"country\"",FontSize -> Scaled[0.03321830554390944`],FontColor -> RGBColor[
+0.8949268664259606`,0.5032845776173072`,0.05843417978336459`],StripOnInput -> False],
+TraditionalForm]],{-115.5`,127.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"military\"",FontSize -> Scaled[0.03386332118553875`],FontColor -> RGBColor[0.529922539669161`,
+0.44454647619850335`,0.85`],StripOnInput -> False],TraditionalForm]],{124.5`,-130.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"form\"",FontSize -> Scaled[
+0.04826867051526`],FontColor -> RGBColor[0.8168067340273636`,0.3521386531945273`,
+0.3761554432877274`],StripOnInput -> False],TraditionalForm]],{-123.5`,-133.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"foreign\"",FontSize -> Scaled[0.0347233420410445`],
+FontColor -> RGBColor[0.8510135028964549`,0.47400900193096995`,0.018912152606809424`],
+StripOnInput -> False],TraditionalForm]],{-122.5`,136.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"history\"",FontSize -> Scaled[0.0347233420410445`],FontColor -> RGBColor[
+0.6102054708420535`,0.39696347534213544`,0.7619863228948663`],StripOnInput -> False],
+TraditionalForm]],{-0.5`,-144.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"states\"",FontSize -> Scaled[0.0394534567463261`],FontColor -> RGBColor[0.5750747800184488`,
+0.4174563783225715`,0.8498130499538777`],StripOnInput -> False],TraditionalForm]],
+{-0.5`,144.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"idea\"",FontSize -> Scaled[
+0.054503821717676655`],FontColor -> RGBColor[0.8878600487784333`,0.33792799024431336`,
+0.2577332520359445`],StripOnInput -> False],TraditionalForm]],{-31.5`,-145.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"fighting\"",FontSize -> Scaled[0.03257328990228013`],
+FontColor -> RGBColor[0.9107287510704583`,0.33890687339431275`,0.20182187767614543`],
+StripOnInput -> False],TraditionalForm]],{33.5`,144.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"nature\"",FontSize -> Scaled[0.03644338375205599`],FontColor -> RGBColor[
+0.8926354502560807`,0.366046824615879`,0.15658862564020168`],StripOnInput -> False],
+TraditionalForm]],{-33.5`,145.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"kind\"",FontSize -> Scaled[0.043323550596101955`],FontColor -> RGBColor[0.9492067688690977`,
+0.5394711792460651`,0.10728609198218791`],StripOnInput -> False],TraditionalForm]],
+{136.5`,49.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"result\"",FontSize -> Scaled[
+0.04074348802958472`],FontColor -> RGBColor[0.6319174318193065`,0.38429816477207124`,
+0.7077064204517338`],StripOnInput -> False],TraditionalForm]],{31.5`,-146.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"success\"",FontSize -> Scaled[0.035798368110426686`],
+FontColor -> RGBColor[0.7658565873730018`,0.358`,0.4582975578876895`],StripOnInput -> False],
+TraditionalForm]],{-62.5`,-142.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"right\"",FontSize -> Scaled[0.04138850367121403`],FontColor -> RGBColor[0.8781534541180211`,
+0.4921023027453475`,0.04333810870621905`],StripOnInput -> False],TraditionalForm]],
+{-137.5`,-67.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"young\"",
+FontSize -> Scaled[0.03429333161329162`],FontColor -> RGBColor[0.8633598745697435`,
+0.40996018814538476`,0.08339968642435877`],StripOnInput -> False],TraditionalForm]],
+{-64.5`,144.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"better\"",
+FontSize -> Scaled[0.03751840982143817`],FontColor -> RGBColor[0.922066817647527`,
+0.5213778784316846`,0.08286013588277422`],StripOnInput -> False],TraditionalForm]],
+{66.5`,145.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"spirit\"",FontSize -> Scaled[
+0.03966846196020254`],FontColor -> RGBColor[0.7277983389807635`,0.358`,0.5168487092603637`],
+StripOnInput -> False],TraditionalForm]],{135.5`,91.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"day\"",FontSize -> Scaled[0.04246352974059621`],FontColor -> RGBColor[
+0.8745421494417032`,0.39318677583744527`,0.11135537360425793`],StripOnInput -> False],
+TraditionalForm]],{139.5`,11.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"reich\"",FontSize -> Scaled[0.04160350888509047`],FontColor -> RGBColor[0.19193353076984873`,
+0.681453175384121`,0.6453202369238185`],StripOnInput -> False],TraditionalForm]],
+{61.5`,-146.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"taken\"",FontSize -> Scaled[
+0.03816342546306748`],FontColor -> RGBColor[0.8335801463353031`,0.3487839707329394`,
+0.3481997561078282`],StripOnInput -> False],TraditionalForm]],{-136.5`,-96.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"small\"",FontSize -> Scaled[0.03429333161329162`],
+FontColor -> RGBColor[0.4177882075393331`,0.715`,0.25417864494993975`],StripOnInput -> False],
+TraditionalForm]],{98.5`,47.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"fight\"",FontSize -> Scaled[0.03859343589082035`],FontColor -> RGBColor[0.9307395679624266`,
+0.7498043964402695`,0.`],StripOnInput -> False],TraditionalForm]],{139.5`,-61.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"end\"",FontSize -> Scaled[
+0.04289354016834908`],FontColor -> RGBColor[0.6897400905885174`,0.358`,0.5753998606330502`],
+StripOnInput -> False],TraditionalForm]],{139.5`,-44.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"case\"",FontSize -> Scaled[0.043968566237731266`],FontColor -> RGBColor[
+0.596786740995709`,0.404791067752503`,0.7955331475107271`],StripOnInput -> False],
+TraditionalForm]],{134.5`,-96.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"best\"",FontSize -> Scaled[0.036658388965932424`],FontColor -> RGBColor[0.5788038738141875`,
+0.715`,0.049249615145579635`],StripOnInput -> False],TraditionalForm]],{39.5`,16.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"come\"",FontSize -> Scaled[
+0.042678534954472644`],FontColor -> RGBColor[0.47929071933511125`,0.715`,0.1759027208462221`],
+StripOnInput -> False],TraditionalForm]],{91.5`,-145.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"found\"",FontSize -> Scaled[0.03429333161329162`],FontColor -> RGBColor[
+0.8774935098648088`,0.34000129802703827`,0.2750108168919853`],StripOnInput -> False],
+TraditionalForm]],{-92.5`,142.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"ideas\"",FontSize -> Scaled[0.0394534567463261`],FontColor -> RGBColor[0.31827505306025683`,
+0.715`,0.3808317506505822`],StripOnInput -> False],TraditionalForm]],{134.5`,-108.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"force\"",FontSize -> Scaled[
+0.03687339417980886`],FontColor -> RGBColor[0.6670481226429111`,0.3638052617916352`,
+0.6198796933927223`],StripOnInput -> False],TraditionalForm]],{139.5`,62.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"able\"",FontSize -> Scaled[0.04031347760183185`],
+FontColor -> RGBColor[0.7175796237092107`,0.7261199581899123`,0.`],StripOnInput -> False],
+TraditionalForm]],{-139.5`,71.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"blood\"",FontSize -> Scaled[0.03300330033003301`],FontColor -> RGBColor[0.6453361616656581`,
+0.37647057236169945`,0.6741595958358548`],StripOnInput -> False],TraditionalForm]],
+{-133.5`,106.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"army\"",FontSize -> Scaled[
+0.032788295116156566`],FontColor -> RGBColor[0.6672593867853922`,0.7205288207539324`,
+0.`],StripOnInput -> False],TraditionalForm]],{137.5`,-72.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"racial\"",FontSize -> Scaled[0.03386332118553875`],FontColor -> RGBColor[
+0.9986489531525362`,0.7507447657626809`,0.0036478264881522893`],StripOnInput -> False],
+TraditionalForm]],{-125.5`,-118.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"old\"",FontSize -> Scaled[0.0441835714516077`],FontColor -> RGBColor[0.8342400905885153`,
+0.4628267270590103`,0.0038160815296638794`],StripOnInput -> False],TraditionalForm]],
+{140.5`,25.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"hand\"",FontSize -> Scaled[
+0.03429333161329162`],FontColor -> RGBColor[0.3383114092015346`,0.5643508726387724`,
+0.8209736910418415`],StripOnInput -> False],TraditionalForm]],{-140.5`,81.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"came\"",FontSize -> Scaled[0.037948420249191046`],
+FontColor -> RGBColor[0.26512246998569167`,0.6229020240114467`,0.73314696398283`],
+StripOnInput -> False],TraditionalForm]],{-94.5`,-144.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"little\"",FontSize -> Scaled[0.03429333161329162`],FontColor -> RGBColor[
+0.9603267270590103`,0.5591336352950514`,0.10711783694067224`],StripOnInput -> False],
+TraditionalForm]],{73.5`,16.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"race\"",FontSize -> Scaled[0.042248524526719775`],FontColor -> RGBColor[0.7896667828057927`,
+0.3575666434388414`,0.4213886953236787`],StripOnInput -> False],TraditionalForm]],
+{95.5`,145.5`},Center,Automatic]},{{}},StripOnInput -> False]},ImageSize -> Large,
+PlotRange -> {{-154.`,153.`},{-153.`,152.`}},DefaultBaseStyle -> {"Graphics",FontFamily -> "Source Sans Pro"},
+Method -> {"DefaultBoundaryStyle" -> Automatic,"DefaultGraphicsInteraction" -> {"Version" -> 1.2`,"TrackMousePosition" -> {True,False},"Effects" -> {"Highlight" -> {"ratio" -> 2},"HighlightPoint" -> {"ratio" -> 2},"Droplines" -> {"freeformCursorMode" -> True,"placement" -> {"x" -> "All","y" -> "None"}}}},"DefaultPlotStyle" -> Automatic}],StyleBox[
+"\"Mein Kampf\"",Bold,14,StripOnInput -> False]},"Labeled",DisplayFunction -> Function[
+GridBox[{{ItemBox[Slot[2],DefaultBaseStyle -> "LabeledLabel"]},{TagBox[ItemBox[PaneBox[
+TagBox[Slot[1],"SkipImageSizeLevel"],Alignment -> {Center,Baseline},BaselinePosition -> Baseline],
+DefaultBaseStyle -> "Labeled"],"SkipImageSizeLevel"]}},GridBoxAlignment -> {"Columns" -> {{Center}},"Rows" -> {{Center}}},
+AutoDelete -> False,GridBoxItemSize -> {"Columns" -> {{Automatic}},"Rows" -> {{Automatic}}},
+BaselinePosition -> {2,1}]],InterpretationFunction -> Function[RowBox[{"Labeled","[",RowBox[
+{Slot[1],",",Slot[2],",","Top",",",RowBox[{"{","}"}]}],"]"}]]]],"Print",CellChangeTimes -> {3.9566000232387047`*^9,3.956600511014791`*^9,3.9566011949456778`*^9,3.956604270251686`*^9},
+CellLabel -> "During evaluation of In[90]:=",ExpressionUUID -> "1438cd03-7721-425a-b078-a1f39f691eb2"],Cell[
+BoxData[
+TemplateBox[{GraphicsBox[{StyleBox[{InsetBox[BoxData[FormBox[StyleBox["\"enemy\"",
+FontSize -> Scaled[0.20949258795956807`],FontColor -> RGBColor[0.95`,0.627`,0.1425`],
+StripOnInput -> False],TraditionalForm]],{0,0},Center,Automatic],InsetBox[BoxData[
+FormBox[StyleBox["\"army\"",FontSize -> Scaled[0.19051316338121324`],FontColor -> RGBColor[
+0.455`,0.7`,0.21`],StripOnInput -> False],TraditionalForm]],{-3.5`,-32.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"sun\"",FontSize -> Scaled[0.24054982817869416`],
+FontColor -> RGBColor[0.24`,0.6`,0.8`],StripOnInput -> False],TraditionalForm]],{-0.5`,37.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"general\"",FontSize -> Scaled[
+0.12408517735697133`],FontColor -> RGBColor[1.`,0.75`,0.`],StripOnInput -> False],
+TraditionalForm]],{-12.5`,62.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"says\"",FontSize -> Scaled[0.15169161310730564`],FontColor -> RGBColor[0.578`,
+0.51`,0.85`],StripOnInput -> False],TraditionalForm]],{-10.5`,-63.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"ground\"",FontSize -> Scaled[0.10251764942702267`],FontColor -> RGBColor[
+0.40082222609352647`,0.5220066643438841`,0.85`],StripOnInput -> False],TraditionalForm]],
+{-6.5`,86.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"tz\:016d\"",
+FontSize -> Scaled[0.17757264662324404`],FontColor -> RGBColor[0.922526`,0.385626`,
+0.209179`],StripOnInput -> False],TraditionalForm]],{83.5`,30.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"enemy\[CloseCurlyQuote]s\"",FontSize -> Scaled[0.08785173043465758`],
+FontColor -> RGBColor[0.8996399512215667`,0.7463488834690629`,0.`],StripOnInput -> False],
+TraditionalForm]],{-0.5`,-95.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"military\"",FontSize -> Scaled[0.07836201814548016`],FontColor -> RGBColor[0.6753413537738198`,
+0.3589675436319385`,0.5991466155654507`],StripOnInput -> False],TraditionalForm]],
+{-87.5`,25.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"chang\"",FontSize -> Scaled[
+0.08871443155185552`],FontColor -> RGBColor[0.5833680111493557`,0.4126186601628758`,
+0.8290799721266107`],StripOnInput -> False],TraditionalForm]],{83.5`,-45.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"men\"",FontSize -> Scaled[0.12408517735697133`],
+FontColor -> RGBColor[0.8`,0.4`,0.76`],StripOnInput -> False],TraditionalForm]],{66.5`,-74.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"attack\"",FontSize -> Scaled[
+0.0956160404894391`],FontColor -> RGBColor[0.736782672705901`,0.358`,0.5030266573755369`],
+StripOnInput -> False],TraditionalForm]],{80.5`,63.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"yu\"",FontSize -> Scaled[0.1249478784741693`],FontColor -> RGBColor[
+0.4`,0.64`,1.`],StripOnInput -> False],TraditionalForm]],{-80.5`,-30.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"war\"",FontSize -> Scaled[0.12408517735697133`],FontColor -> RGBColor[
+0.915`,0.3325`,0.2125`],StripOnInput -> False],TraditionalForm]],{-80.5`,-63.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"wu\"",FontSize -> Scaled[0.1327121885289508`],
+FontColor -> RGBColor[0.772079`,0.431554`,0.102387`],StripOnInput -> False],TraditionalForm]],
+{-92.5`,50.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"ts\[CloseCurlyQuote]ao\"",
+FontSize -> Scaled[0.09475333937224116`],FontColor -> RGBColor[0.28026441037696703`,
+0.715`,0.4292089322474965`],StripOnInput -> False],TraditionalForm]],{-0.5`,103.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"great\"",FontSize -> Scaled[
+0.07404851255949044`],FontColor -> RGBColor[0.8857244243136628`,0.3764133635295058`,
+0.1393110607841571`],StripOnInput -> False],TraditionalForm]],{99.5`,-24.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"victory\"",FontSize -> Scaled[0.06542150138751096`],
+FontColor -> RGBColor[0.7132613816472081`,0.358`,0.5392132590042952`],StripOnInput -> False],
+TraditionalForm]],{63.5`,83.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"soldiers\"",FontSize -> Scaled[0.07146040920789659`],FontColor -> RGBColor[0.47401116530937026`,
+0.47809330081437784`,0.85`],StripOnInput -> False],TraditionalForm]],{-0.5`,-114.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"make\"",FontSize -> Scaled[
+0.08440092596586579`],FontColor -> RGBColor[0.8439466852489265`,0.3467106629502147`,
+0.3309221912517893`],StripOnInput -> False],TraditionalForm]],{-80.5`,78.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"commentators\"",FontSize -> Scaled[
+0.04471667457476024`],FontColor -> RGBColor[0.7277983389807635`,0.358`,0.5168487092603637`],
+StripOnInput -> False],TraditionalForm]],{-70.5`,97.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"chinese\"",FontSize -> Scaled[0.06800960473910479`],FontColor -> RGBColor[
+0.7678998606330495`,0.7317110956258943`,0.`],StripOnInput -> False],TraditionalForm]],
+{-76.5`,-86.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"strength\"",
+FontSize -> Scaled[0.049030180160749975`],FontColor -> RGBColor[0.8607200975568693`,
+0.34335598048862614`,0.30296650407188447`],StripOnInput -> False],TraditionalForm]],
+{61.5`,98.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"advantage\"",
+FontSize -> Scaled[0.04730477792635408`],FontColor -> RGBColor[0.47929071933511125`,
+0.715`,0.1759027208462221`],StripOnInput -> False],TraditionalForm]],{31.5`,114.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"position\"",FontSize -> Scaled[
+0.04816747904355203`],FontColor -> RGBColor[0.9492067688690977`,0.5394711792460651`,
+0.10728609198218791`],StripOnInput -> False],TraditionalForm]],{68.5`,-95.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"order\"",FontSize -> Scaled[0.06887230585630275`],
+FontColor -> RGBColor[0.8613800418100862`,0.48092002787339083`,0.02824203762907758`],
+StripOnInput -> False],TraditionalForm]],{-52.5`,111.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"tu\"",FontSize -> Scaled[0.12408517735697133`],FontColor -> RGBColor[
+0.637`,0.65`,0.`],StripOnInput -> False],TraditionalForm]],{-100.5`,0.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"spies\"",FontSize -> Scaled[0.061970696918719176`],
+FontColor -> RGBColor[0.8564488486273256`,0.42032672705901153`,0.06612212156831418`],
+StripOnInput -> False],TraditionalForm]],{101.5`,-5.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"kung\"",FontSize -> Scaled[0.06628420250470891`],FontColor -> RGBColor[
+0.35558897405758294`,0.5505288207539337`,0.8417067688690995`],StripOnInput -> False],
+TraditionalForm]],{-67.5`,-104.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"saying\"",FontSize -> Scaled[0.0550690879811356`],FontColor -> RGBColor[0.6361597700445392`,
+0.7170733077827265`,0.`],StripOnInput -> False],TraditionalForm]],{54.5`,-110.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"ch\[CloseCurlyQuote]en\"",
+FontSize -> Scaled[0.06800960473910479`],FontColor -> RGBColor[0.8878600487784333`,
+0.33792799024431336`,0.2577332520359445`],StripOnInput -> False],TraditionalForm]],
+{83.5`,112.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"battle\"",FontSize -> Scaled[
+0.06283339803591713`],FontColor -> RGBColor[0.37977756485605163`,0.715`,0.3025558265468435`],
+StripOnInput -> False],TraditionalForm]],{-100.5`,109.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"work\"",FontSize -> Scaled[0.06628420250470891`],FontColor -> RGBColor[
+0.9637822400302223`,0.5764112001511111`,0.0977879519184`],StripOnInput -> False],
+TraditionalForm]],{99.5`,-107.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"time\"",FontSize -> Scaled[0.07146040920789659`],FontColor -> RGBColor[0.9874666782805795`,
+0.6948333914028977`,0.033839968642435214`],StripOnInput -> False],TraditionalForm]],
+{-80.5`,-116.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"mu\"",FontSize -> Scaled[
+0.0921652360206473`],FontColor -> RGBColor[0.838355547812947`,0.44746667828057946`,
+0.0208888695323676`],StripOnInput -> False],TraditionalForm]],{-116.5`,-19.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"wang\"",FontSize -> Scaled[0.05334368574673971`],
+FontColor -> RGBColor[0.428777913273419`,0.5052332520359486`,0.85`],StripOnInput -> False],
+TraditionalForm]],{-24.5`,122.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"shih\"",FontSize -> Scaled[0.06887230585630275`],FontColor -> RGBColor[0.6184987019729621`,
+0.39212575718243875`,0.7412532450675947`],StripOnInput -> False],TraditionalForm]],
+{111.5`,82.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"country\"",
+FontSize -> Scaled[0.04471667457476024`],FontColor -> RGBColor[0.31827505306025683`,
+0.715`,0.3808317506505822`],StripOnInput -> False],TraditionalForm]],{25.5`,127.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"said\"",FontSize -> Scaled[
+0.07059770809069865`],FontColor -> RGBColor[0.7748409210981391`,0.358`,0.4444755060028629`],
+StripOnInput -> False],TraditionalForm]],{-116.5`,-40.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"troops\"",FontSize -> Scaled[0.04644207680915613`],FontColor -> RGBColor[
+0.6319174318193065`,0.38429816477207124`,0.7077064204517338`],StripOnInput -> False],
+TraditionalForm]],{51.5`,-124.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"ch\[CloseCurlyQuote]\"",FontSize -> Scaled[0.080950121497074`],FontColor -> RGBColor[
+0.28240003484173815`,0.6090799721266095`,0.7538800418100857`],StripOnInput -> False],
+TraditionalForm]],{114.5`,-72.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"fight\"",FontSize -> Scaled[0.0567944902155315`],FontColor -> RGBColor[0.23716678280579248`,
+0.645266573755366`,0.699600139366951`],StripOnInput -> False],TraditionalForm]],{-75.5`,125.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"following\"",FontSize -> Scaled[
+0.03781506563717667`],FontColor -> RGBColor[0.8510135028964549`,0.47400900193096995`,
+0.018912152606809424`],StripOnInput -> False],TraditionalForm]],{72.5`,126.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"meaning\"",FontSize -> Scaled[0.03781506563717667`],
+FontColor -> RGBColor[0.8774935098648088`,0.34000129802703827`,0.2750108168919853`],
+StripOnInput -> False],TraditionalForm]],{-43.5`,-128.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"means\"",FontSize -> Scaled[0.0550690879811356`],FontColor -> RGBColor[
+0.6536293927965667`,0.37163285420200276`,0.6534265180085832`],StripOnInput -> False],
+TraditionalForm]],{0.5`,-128.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"fighting\"",FontSize -> Scaled[0.038677766754374614`],FontColor -> RGBColor[0.7658565873730018`,
+0.358`,0.4582975578876895`],StripOnInput -> False],TraditionalForm]],{-113.5`,-99.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"chapters\"",FontSize -> Scaled[
+0.03522696228558283`],FontColor -> RGBColor[0.2198892179497479`,0.6590886256402017`,
+0.6788670615396974`],StripOnInput -> False],TraditionalForm]],{90.5`,-126.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"words\"",FontSize -> Scaled[0.04730477792635408`],
+FontColor -> RGBColor[0.7896667828057927`,0.3575666434388414`,0.4213886953236787`],
+StripOnInput -> False],TraditionalForm]],{105.5`,97.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"state\"",FontSize -> Scaled[0.05765719133272944`],FontColor -> RGBColor[
+0.8168067340273636`,0.3521386531945273`,0.3761554432877274`],StripOnInput -> False],
+TraditionalForm]],{-110.5`,125.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"officers\"",FontSize -> Scaled[0.0438539734575623`],FontColor -> RGBColor[0.9307395679624266`,
+0.7498043964402695`,0.`],StripOnInput -> False],TraditionalForm]],{-96.5`,-129.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"way\"",FontSize -> Scaled[
+0.05248098462954176`],FontColor -> RGBColor[0.7513196300394465`,0.358`,0.48066210763162087`],
+StripOnInput -> False],TraditionalForm]],{113.5`,-86.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"man\"",FontSize -> Scaled[0.05938259356712534`],FontColor -> RGBColor[
+0.9810598048862722`,0.7553955338762525`,0.`],StripOnInput -> False],TraditionalForm]],
+{-118.5`,-111.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"ch\[CloseCurlyQuote]uan\"",
+FontSize -> Scaled[0.042128571223166406`],FontColor -> RGBColor[0.26512246998569167`,
+0.6229020240114467`,0.73314696398283`],StripOnInput -> False],TraditionalForm]],{-108.5`,61.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"hence\"",FontSize -> Scaled[
+0.04816747904355203`],FontColor -> RGBColor[0.3103557220216354`,0.5867154223826917`,
+0.7874268664259625`],StripOnInput -> False],TraditionalForm]],{113.5`,123.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"ch.\"",FontSize -> Scaled[0.0697350069735007`],
+FontColor -> RGBColor[0.16397784358994957`,0.7038177251280403`,0.6117734123079395`],
+StripOnInput -> False],TraditionalForm]],{-120.5`,-62.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"tz\:016d\[CloseCurlyQuote]s\"",FontSize -> Scaled[0.03781506563717667`],
+FontColor -> RGBColor[0.3383114092015346`,0.5643508726387724`,0.8209736910418415`],
+StripOnInput -> False],TraditionalForm]],{-122.5`,71.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"king\"",FontSize -> Scaled[0.04557937569195819`],FontColor -> RGBColor[
+0.9046334610863751`,0.334573307782725`,0.22977756485604156`],StripOnInput -> False],
+TraditionalForm]],{-121.5`,-78.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"point\"",FontSize -> Scaled[0.04126587010596845`],FontColor -> RGBColor[0.922066817647527`,
+0.5213778784316846`,0.08286013588277422`],StripOnInput -> False],TraditionalForm]],
+{128.5`,6.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"force\"",FontSize -> Scaled[
+0.04730477792635408`],FontColor -> RGBColor[0.8745421494417032`,0.39318677583744527`,
+0.11135537360425793`],StripOnInput -> False],TraditionalForm]],{129.5`,17.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"\[Section]\"",FontSize -> Scaled[
+0.09992954607542882`],FontColor -> RGBColor[0.9728288904374106`,0.621644452187053`,
+0.07336199581899142`],StripOnInput -> False],TraditionalForm]],{-126.5`,0.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"know\"",FontSize -> Scaled[0.049030180160749975`],
+FontColor -> RGBColor[0.596786740995709`,0.404791067752503`,0.7955331475107271`],
+StripOnInput -> False],TraditionalForm]],{-14.5`,132.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"come\"",FontSize -> Scaled[0.04557937569195819`],FontColor -> RGBColor[
+0.7175796237092107`,0.7261199581899123`,0.`],StripOnInput -> False],TraditionalForm]],
+{63.5`,-59.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"place\"",FontSize -> Scaled[
+0.038677766754374614`],FontColor -> RGBColor[0.15725938678540247`,0.715`,0.5857607804549424`],
+StripOnInput -> False],TraditionalForm]],{-126.5`,34.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"han\"",FontSize -> Scaled[0.05334368574673971`],FontColor -> RGBColor[
+0.9038177251280404`,0.3492734123079395`,0.18454431282010084`],StripOnInput -> False],
+TraditionalForm]],{127.5`,30.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"chuan\"",FontSize -> Scaled[0.038677766754374614`],FontColor -> RGBColor[0.9840111653093676`,
+0.677555826546838`,0.04316985366470745`],StripOnInput -> False],TraditionalForm]],
+{128.5`,43.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"hand\"",FontSize -> Scaled[
+0.03781506563717667`],FontColor -> RGBColor[0.7989994773739094`,0.735166608597101`,
+0.`],StripOnInput -> False],TraditionalForm]],{74.5`,42.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"good\"",FontSize -> Scaled[0.03781506563717667`],FontColor -> RGBColor[
+0.6102054708420535`,0.39696347534213544`,0.7619863228948663`],StripOnInput -> False],
+TraditionalForm]],{129.5`,-37.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"note\"",FontSize -> Scaled[0.049030180160749975`],FontColor -> RGBColor[0.8493197142977551`,
+0.7407577460330839`,0.`],StripOnInput -> False],TraditionalForm]],{130.5`,-48.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"camp\"",FontSize -> Scaled[
+0.038677766754374614`],FontColor -> RGBColor[0.4567336004533182`,0.4884598397280091`,
+0.85`],StripOnInput -> False],TraditionalForm]],{-130.5`,45.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"march\"",FontSize -> Scaled[0.036089663402780775`],FontColor -> RGBColor[
+0.8064401951137368`,0.3542119609772526`,0.39343300814377197`],StripOnInput -> False],
+TraditionalForm]],{-0.5`,139.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"away\"",FontSize -> Scaled[0.036089663402780775`],FontColor -> RGBColor[0.529922539669161`,
+0.44454647619850335`,0.85`],StripOnInput -> False],TraditionalForm]],{-42.5`,132.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"text\"",FontSize -> Scaled[
+0.04816747904355203`],FontColor -> RGBColor[0.6897400905885174`,0.358`,0.5753998606330502`],
+StripOnInput -> False],TraditionalForm]],{128.5`,56.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"shu\"",FontSize -> Scaled[0.04644207680915613`],FontColor -> RGBColor[
+0.8781534541180211`,0.4921023027453475`,0.04333810870621905`],StripOnInput -> False],
+TraditionalForm]],{133.5`,-6.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"mei\"",FontSize -> Scaled[0.04557937569195819`],FontColor -> RGBColor[0.38354466123747527`,
+0.5323732032575149`,0.85`],StripOnInput -> False],TraditionalForm]],{36.5`,-137.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"chi\"",FontSize -> Scaled[
+0.04644207680915613`],FontColor -> RGBColor[0.19193353076984873`,0.681453175384121`,
+0.6453202369238185`],StripOnInput -> False],TraditionalForm]],{132.5`,-20.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"right\"",FontSize -> Scaled[0.03695236451997872`],
+FontColor -> RGBColor[0.4177882075393331`,0.715`,0.25417864494993975`],StripOnInput -> False],
+TraditionalForm]],{24.5`,138.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"like\"",FontSize -> Scaled[0.04730477792635408`],FontColor -> RGBColor[0.5019668524892619`,
+0.46131988850644284`,0.85`],StripOnInput -> False],TraditionalForm]],{-134.5`,18.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"long\"",FontSize -> Scaled[
+0.03695236451997872`],FontColor -> RGBColor[0.7042770479220728`,0.358`,0.5530353108891188`],
+StripOnInput -> False],TraditionalForm]],{47.5`,138.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"use\"",FontSize -> Scaled[0.04730477792635408`],FontColor -> RGBColor[
+0.9930578157165594`,0.7227890785827968`,0.01874389756528967`],StripOnInput -> False],
+TraditionalForm]],{-73.5`,-48.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"shall\"",FontSize -> Scaled[0.03695236451997872`],FontColor -> RGBColor[0.8633598745697435`,
+0.40996018814538476`,0.08339968642435877`],StripOnInput -> False],TraditionalForm]],
+{127.5`,66.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"ho\"",FontSize -> Scaled[
+0.0567944902155315`],FontColor -> RGBColor[0.9052934053395919`,0.510195603559728`,
+0.06776406480563275`],StripOnInput -> False],TraditionalForm]],{-118.5`,87.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"art\"",FontSize -> Scaled[0.04989288127794792`],
+FontColor -> RGBColor[0.8342400905885153`,0.4628267270590103`,0.0038160815296638794`],
+StripOnInput -> False],TraditionalForm]],{58.5`,-137.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"ch\[CloseCurlyQuote]u\"",FontSize -> Scaled[0.03436426116838488`],
+FontColor -> RGBColor[0.9107287510704583`,0.33890687339431275`,0.20182187767614543`],
+StripOnInput -> False],TraditionalForm]],{89.5`,-61.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"fire\"",FontSize -> Scaled[0.0438539734575623`],FontColor -> RGBColor[
+0.5750747800184488`,0.4174563783225715`,0.8498130499538777`],StripOnInput -> False],
+TraditionalForm]],{-29.5`,-139.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"li\"",FontSize -> Scaled[0.07577391479388632`],FontColor -> RGBColor[0.5407932311309059`,
+0.715`,0.09762679674248334`],StripOnInput -> False],TraditionalForm]],{134.5`,-66.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"1\"",FontSize -> Scaled[0.07922471926267811`],
+FontColor -> RGBColor[0.9324333565611593`,0.5282889043741062`,0.0921900209050434`],
+StripOnInput -> False],TraditionalForm]],{-138.5`,-44.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"sent\"",FontSize -> Scaled[0.03522696228558283`],FontColor -> RGBColor[
+0.6672593867853922`,0.7205288207539324`,0.`],StripOnInput -> False],TraditionalForm]],
+{-41.5`,139.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"b.c.\"",FontSize -> Scaled[
+0.038677766754374614`],FontColor -> RGBColor[0.8926354502560807`,0.366046824615879`,
+0.15658862564020168`],StripOnInput -> False],TraditionalForm]],{-135.5`,55.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"13\"",FontSize -> Scaled[0.04471667457476024`],
+FontColor -> RGBColor[0.969373377466199`,0.6043668873309952`,0.08269188084126262`],
+StripOnInput -> False],TraditionalForm]],{-63.5`,137.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"five\"",FontSize -> Scaled[0.036089663402780775`],FontColor -> RGBColor[
+0.9986489531525362`,0.7507447657626809`,0.0036478264881522893`],StripOnInput -> False],
+TraditionalForm]],{-48.5`,-139.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"say\"",FontSize -> Scaled[0.03522696228558283`],FontColor -> RGBColor[0.6453361616656581`,
+0.37647057236169945`,0.6741595958358548`],StripOnInput -> False],TraditionalForm]],
+{66.5`,135.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"2\"",FontSize -> Scaled[
+0.06110799580152122`],FontColor -> RGBColor[0.5472001045252132`,0.43417993728487203`,
+0.85`],StripOnInput -> False],TraditionalForm]],{-139.5`,0.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"lu\"",FontSize -> Scaled[0.05075558239514587`],FontColor -> RGBColor[
+0.2187618985811806`,0.715`,0.5074848563512248`],StripOnInput -> False],TraditionalForm]],
+{-64.5`,-137.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"cf.\"",FontSize -> Scaled[
+0.03954046787157256`],FontColor -> RGBColor[0.5788038738141875`,0.715`,0.049249615145579635`],
+StripOnInput -> False],TraditionalForm]],{136.5`,76.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"hsi\"",FontSize -> Scaled[0.03522696228558283`],FontColor -> RGBColor[
+0.8949268664259606`,0.5032845776173072`,0.05843417978336459`],StripOnInput -> False],
+TraditionalForm]],{-77.5`,136.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"3\"",FontSize -> Scaled[0.05248098462954176`],FontColor -> RGBColor[0.9784200278733908`,
+0.649600139366954`,0.058265924741844846`],StripOnInput -> False],TraditionalForm]],
+{32.5`,17.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"\[CloseCurlyQuote]s\"",
+FontSize -> Scaled[0.040403168988770506`],FontColor -> RGBColor[0.6670481226429111`,
+0.3638052617916352`,0.6198796933927223`],StripOnInput -> False],TraditionalForm]],
+{-139.5`,-14.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"5\"",FontSize -> Scaled[
+0.042991272340364345`],FontColor -> RGBColor[0.8335801463353031`,0.3487839707329394`,
+0.3481997561078282`],StripOnInput -> False],TraditionalForm]],{-4.5`,28.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"4\"",FontSize -> Scaled[0.0438539734575623`],
+FontColor -> RGBColor[0.845266573755366`,0.437100139366951`,0.03816643438841502`],
+StripOnInput -> False],TraditionalForm]],{-4.5`,39.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"6\"",FontSize -> Scaled[0.03695236451997872`],FontColor -> RGBColor[
+0.9603267270590103`,0.5591336352950514`,0.10711783694067224`],StripOnInput -> False],
+TraditionalForm]],{-38.5`,-8.5`},Center,Automatic]},{{}},StripOnInput -> False]},
+ImageSize -> Large,PlotRange -> {{-146.`,145.`},{-146.`,145.`}},DefaultBaseStyle -> {"Graphics",FontFamily -> "Source Sans Pro"},
+Method -> {"DefaultBoundaryStyle" -> Automatic,"DefaultGraphicsInteraction" -> {"Version" -> 1.2`,"TrackMousePosition" -> {True,False},"Effects" -> {"Highlight" -> {"ratio" -> 2},"HighlightPoint" -> {"ratio" -> 2},"Droplines" -> {"freeformCursorMode" -> True,"placement" -> {"x" -> "All","y" -> "None"}}}},"DefaultPlotStyle" -> Automatic}],StyleBox[
+"\"The Art of War\"",Bold,14,StripOnInput -> False]},"Labeled",DisplayFunction -> Function[
+GridBox[{{ItemBox[Slot[2],DefaultBaseStyle -> "LabeledLabel"]},{TagBox[ItemBox[PaneBox[
+TagBox[Slot[1],"SkipImageSizeLevel"],Alignment -> {Center,Baseline},BaselinePosition -> Baseline],
+DefaultBaseStyle -> "Labeled"],"SkipImageSizeLevel"]}},GridBoxAlignment -> {"Columns" -> {{Center}},"Rows" -> {{Center}}},
+AutoDelete -> False,GridBoxItemSize -> {"Columns" -> {{Automatic}},"Rows" -> {{Automatic}}},
+BaselinePosition -> {2,1}]],InterpretationFunction -> Function[RowBox[{"Labeled","[",RowBox[
+{Slot[1],",",Slot[2],",","Top",",",RowBox[{"{","}"}]}],"]"}]]]],"Print",CellChangeTimes -> {3.9566000232387047`*^9,3.956600511014791`*^9,3.9566011949456778`*^9,3.95660427540827`*^9},
+CellLabel -> "During evaluation of In[90]:=",ExpressionUUID -> "f7b2188b-1771-4d1c-a17a-7eebd6f1ba34"],Cell[
+BoxData[
+TemplateBox[{GraphicsBox[{StyleBox[{InsetBox[BoxData[FormBox[StyleBox["\"prince\"",
+FontSize -> Scaled[0.2364864864864865`],FontColor -> RGBColor[0.24`,0.6`,0.8`],StripOnInput -> False],
+TraditionalForm]],{0,0},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"castruccio\"",
+FontSize -> Scaled[0.1502079002079002`],FontColor -> RGBColor[0.455`,0.7`,0.21`],
+StripOnInput -> False],TraditionalForm]],{-4.`,43.`},Center,Automatic],InsetBox[BoxData[
+FormBox[StyleBox["\"people\"",FontSize -> Scaled[0.12422037422037421`],FontColor -> RGBColor[
+0.922526`,0.385626`,0.209179`],StripOnInput -> False],TraditionalForm]],{0.`,-35.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"men\"",FontSize -> Scaled[
+0.1761954261954262`],FontColor -> RGBColor[0.95`,0.627`,0.1425`],StripOnInput -> False],
+TraditionalForm]],{13.`,-63.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"great\"",FontSize -> Scaled[0.10031185031185032`],FontColor -> RGBColor[0.4`,0.64`,
+1.`],StripOnInput -> False],TraditionalForm]],{5.`,68.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"florentines\"",FontSize -> Scaled[0.07120582120582121`],
+FontColor -> RGBColor[0.8996399512215667`,0.7463488834690629`,0.`],StripOnInput -> False],
+TraditionalForm]],{-23.`,82.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"necessary\"",FontSize -> Scaled[0.07016632016632017`],FontColor -> RGBColor[0.28240003484173815`,
+0.6090799721266095`,0.7538800418100857`],StripOnInput -> False],TraditionalForm]],
+{0.`,-89.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"princes\"",FontSize -> Scaled[
+0.07432432432432433`],FontColor -> RGBColor[0.838355547812947`,0.44746667828057946`,
+0.0208888695323676`],StripOnInput -> False],TraditionalForm]],{-64.`,65.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"time\"",FontSize -> Scaled[0.10654885654885655`],
+FontColor -> RGBColor[0.578`,0.51`,0.85`],StripOnInput -> False],TraditionalForm]],
+{-63.`,-63.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"machiavelli\"",
+FontSize -> Scaled[0.06185031185031185`],FontColor -> RGBColor[0.9874666782805795`,
+0.6948333914028977`,0.033839968642435214`],StripOnInput -> False],TraditionalForm]],
+{0.`,100.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"duke\"",FontSize -> Scaled[
+0.10135135135135136`],FontColor -> RGBColor[0.772079`,0.431554`,0.102387`],StripOnInput -> False],
+TraditionalForm]],{83.`,-38.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"fortune\"",FontSize -> Scaled[0.07432432432432433`],FontColor -> RGBColor[0.28026441037696703`,
+0.715`,0.4292089322474965`],StripOnInput -> False],TraditionalForm]],{72.`,68.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"good\"",FontSize -> Scaled[
+0.08264033264033264`],FontColor -> RGBColor[0.915`,0.3325`,0.2125`],StripOnInput -> False],
+TraditionalForm]],{87.`,-62.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"concerning\"",FontSize -> Scaled[0.05353430353430354`],FontColor -> RGBColor[0.7132613816472081`,
+0.358`,0.5392132590042952`],StripOnInput -> False],TraditionalForm]],{-6.`,-105.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"principalities\"",FontSize -> Scaled[
+0.04521829521829522`],FontColor -> RGBColor[0.47929071933511125`,0.715`,0.1759027208462221`],
+StripOnInput -> False],TraditionalForm]],{70.`,87.`},Center,Automatic],InsetBox[BoxData[
+FormBox[StyleBox["\"things\"",FontSize -> Scaled[0.06704781704781705`],FontColor -> RGBColor[
+0.6753413537738198`,0.3589675436319385`,0.5991466155654507`],StripOnInput -> False],
+TraditionalForm]],{-70.`,-85.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"state\"",FontSize -> Scaled[0.09095634095634096`],FontColor -> RGBColor[0.8`,0.4`,
+0.76`],StripOnInput -> False],TraditionalForm]],{69.`,-93.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"make\"",FontSize -> Scaled[0.08056133056133057`],FontColor -> RGBColor[
+0.40082222609352647`,0.5220066643438841`,0.85`],StripOnInput -> False],TraditionalForm]],
+{-38.`,114.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"king\"",FontSize -> Scaled[
+0.07952182952182953`],FontColor -> RGBColor[0.9728288904374106`,0.621644452187053`,
+0.07336199581899142`],StripOnInput -> False],TraditionalForm]],{-66.`,-104.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"soldiers\"",FontSize -> Scaled[0.06392931392931393`],
+FontColor -> RGBColor[0.47401116530937026`,0.47809330081437784`,0.85`],StripOnInput -> False],
+TraditionalForm]],{21.`,116.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"florence\"",FontSize -> Scaled[0.057692307692307696`],FontColor -> RGBColor[0.7678998606330495`,
+0.7317110956258943`,0.`],StripOnInput -> False],TraditionalForm]],{60.`,-113.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"way\"",FontSize -> Scaled[0.07224532224532225`],
+FontColor -> RGBColor[0.5833680111493557`,0.4126186601628758`,0.8290799721266107`],
+StripOnInput -> False],TraditionalForm]],{104.`,18.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"man\"",FontSize -> Scaled[0.091995841995842`],FontColor -> RGBColor[
+1.`,0.75`,0.`],StripOnInput -> False],TraditionalForm]],{75.`,104.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"country\"",FontSize -> Scaled[0.0524948024948025`],FontColor -> RGBColor[
+0.5472001045252132`,0.43417993728487203`,0.85`],StripOnInput -> False],TraditionalForm]],
+{-99.`,80.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"afterwards\"",
+FontSize -> Scaled[0.04937629937629938`],FontColor -> RGBColor[0.9038177251280404`,
+0.3492734123079395`,0.18454431282010084`],StripOnInput -> False],TraditionalForm]],
+{-7.`,-120.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"alexander\"",
+FontSize -> Scaled[0.05561330561330561`],FontColor -> RGBColor[0.35558897405758294`,
+0.5505288207539337`,0.8417067688690995`],StripOnInput -> False],TraditionalForm]],
+{86.`,117.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"opportunity\"",
+FontSize -> Scaled[0.04106029106029106`],FontColor -> RGBColor[0.969373377466199`,
+0.6043668873309952`,0.08269188084126262`],StripOnInput -> False],TraditionalForm]],
+{-80.`,18.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"italy\"",FontSize -> Scaled[
+0.07016632016632017`],FontColor -> RGBColor[0.8439466852489265`,0.3467106629502147`,
+0.3309221912517893`],StripOnInput -> False],TraditionalForm]],{-107.`,0.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"considered\"",FontSize -> Scaled[
+0.04937629937629938`],FontColor -> RGBColor[0.428777913273419`,0.5052332520359486`,
+0.85`],StripOnInput -> False],TraditionalForm]],{-91.`,-121.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"army\"",FontSize -> Scaled[0.05977130977130978`],FontColor -> RGBColor[
+0.7748409210981391`,0.358`,0.4444755060028629`],StripOnInput -> False],TraditionalForm]],
+{101.`,-77.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"new\"",FontSize -> Scaled[
+0.08471933471933472`],FontColor -> RGBColor[0.637`,0.65`,0.`],StripOnInput -> False],
+TraditionalForm]],{-92.`,95.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"nevertheless\"",FontSize -> Scaled[0.04002079002079002`],FontColor -> RGBColor[
+0.5750747800184488`,0.4174563783225715`,0.8498130499538777`],StripOnInput -> False],
+TraditionalForm]],{-94.`,105.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"enemy\"",FontSize -> Scaled[0.0472972972972973`],FontColor -> RGBColor[0.596786740995709`,
+0.404791067752503`,0.7955331475107271`],StripOnInput -> False],TraditionalForm]],
+{9.`,19.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"order\"",FontSize -> Scaled[
+0.05977130977130978`],FontColor -> RGBColor[0.16397784358994957`,0.7038177251280403`,
+0.6117734123079395`],StripOnInput -> False],TraditionalForm]],{-86.`,118.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"principality\"",FontSize -> Scaled[
+0.03898128898128898`],FontColor -> RGBColor[0.6670481226429111`,0.3638052617916352`,
+0.6198796933927223`],StripOnInput -> False],TraditionalForm]],{0.`,131.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"arms\"",FontSize -> Scaled[0.07536382536382537`],
+FontColor -> RGBColor[0.736782672705901`,0.358`,0.5030266573755369`],StripOnInput -> False],
+TraditionalForm]],{-112.`,-18.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"power\"",FontSize -> Scaled[0.05145530145530146`],FontColor -> RGBColor[0.8168067340273636`,
+0.3521386531945273`,0.3761554432877274`],StripOnInput -> False],TraditionalForm]],
+{112.`,-15.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"friends\"",FontSize -> Scaled[
+0.05145530145530146`],FontColor -> RGBColor[0.9810598048862722`,0.7553955338762525`,
+0.`],StripOnInput -> False],TraditionalForm]],{-111.`,-34.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"pope\"",FontSize -> Scaled[0.05561330561330561`],FontColor -> RGBColor[
+0.9637822400302223`,0.5764112001511111`,0.0977879519184`],StripOnInput -> False],
+TraditionalForm]],{109.`,33.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"lucca\"",FontSize -> Scaled[0.05873180873180873`],FontColor -> RGBColor[0.6184987019729621`,
+0.39212575718243875`,0.7412532450675947`],StripOnInput -> False],TraditionalForm]],
+{110.`,44.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"france\"",FontSize -> Scaled[
+0.05353430353430354`],FontColor -> RGBColor[0.37977756485605163`,0.715`,0.3025558265468435`],
+StripOnInput -> False],TraditionalForm]],{115.`,-1.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"subjects\"",FontSize -> Scaled[0.0420997920997921`],FontColor -> RGBColor[
+0.6319174318193065`,0.38429816477207124`,0.7077064204517338`],StripOnInput -> False],
+TraditionalForm]],{-112.`,-46.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"said\"",FontSize -> Scaled[0.06496881496881497`],FontColor -> RGBColor[0.5407932311309059`,
+0.715`,0.09762679674248334`],StripOnInput -> False],TraditionalForm]],{-114.`,29.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"thousand\"",FontSize -> Scaled[
+0.0420997920997921`],FontColor -> RGBColor[0.7175796237092107`,0.7261199581899123`,
+0.`],StripOnInput -> False],TraditionalForm]],{52.`,-127.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"whilst\"",FontSize -> Scaled[0.05145530145530146`],FontColor -> RGBColor[
+0.23716678280579248`,0.645266573755366`,0.699600139366951`],StripOnInput -> False],
+TraditionalForm]],{-115.`,-61.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"infantry\"",FontSize -> Scaled[0.04002079002079002`],FontColor -> RGBColor[0.845266573755366`,
+0.437100139366951`,0.03816643438841502`],StripOnInput -> False],TraditionalForm]],
+{-115.`,47.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"difficulties\"",
+FontSize -> Scaled[0.036902286902286904`],FontColor -> RGBColor[0.8510135028964549`,
+0.47400900193096995`,0.018912152606809424`],StripOnInput -> False],TraditionalForm]],
+{57.`,17.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"hold\"",FontSize -> Scaled[
+0.05873180873180873`],FontColor -> RGBColor[0.8613800418100862`,0.48092002787339083`,
+0.02824203762907758`],StripOnInput -> False],TraditionalForm]],{-114.`,58.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"kingdom\"",FontSize -> Scaled[0.04106029106029106`],
+FontColor -> RGBColor[0.38354466123747527`,0.5323732032575149`,0.85`],StripOnInput -> False],
+TraditionalForm]],{50.`,128.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"acquired\"",FontSize -> Scaled[0.04106029106029106`],FontColor -> RGBColor[0.9046334610863751`,
+0.334573307782725`,0.22977756485604156`],StripOnInput -> False],TraditionalForm]],
+{-52.`,129.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"able\"",FontSize -> Scaled[
+0.06392931392931393`],FontColor -> RGBColor[0.8857244243136628`,0.3764133635295058`,
+0.1393110607841571`],StripOnInput -> False],TraditionalForm]],{-113.`,-76.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"fear\"",FontSize -> Scaled[0.06704781704781705`],
+FontColor -> RGBColor[0.9324333565611593`,0.5282889043741062`,0.0921900209050434`],
+StripOnInput -> False],TraditionalForm]],{-105.`,-98.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"found\"",FontSize -> Scaled[0.056652806652806656`],FontColor -> RGBColor[
+0.8878600487784333`,0.33792799024431336`,0.2577332520359445`],StripOnInput -> False],
+TraditionalForm]],{111.`,-111.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"francesco\"",FontSize -> Scaled[0.036902286902286904`],FontColor -> RGBColor[0.6102054708420535`,
+0.39696347534213544`,0.7619863228948663`],StripOnInput -> False],TraditionalForm]],
+{-22.`,-132.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"messer\"",FontSize -> Scaled[
+0.0472972972972973`],FontColor -> RGBColor[0.8493197142977551`,0.7407577460330839`,
+0.`],StripOnInput -> False],TraditionalForm]],{97.`,-125.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"entirely\"",FontSize -> Scaled[0.037941787941787944`],
+FontColor -> RGBColor[0.5788038738141875`,0.715`,0.049249615145579635`],StripOnInput -> False],
+TraditionalForm]],{116.`,-94.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"affairs\"",FontSize -> Scaled[0.04937629937629938`],FontColor -> RGBColor[0.6361597700445392`,
+0.7170733077827265`,0.`],StripOnInput -> False],TraditionalForm]],{94.`,130.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"long\"",FontSize -> Scaled[0.05041580041580042`],
+FontColor -> RGBColor[0.9052934053395919`,0.510195603559728`,0.06776406480563275`],
+StripOnInput -> False],TraditionalForm]],{122.`,57.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"death\"",FontSize -> Scaled[0.04521829521829522`],FontColor -> RGBColor[
+0.3103557220216354`,0.5867154223826917`,0.7874268664259625`],StripOnInput -> False],
+TraditionalForm]],{118.`,97.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"wish\"",FontSize -> Scaled[0.04833679833679834`],FontColor -> RGBColor[0.7513196300394465`,
+0.358`,0.48066210763162087`],StripOnInput -> False],TraditionalForm]],{122.`,71.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"brought\"",FontSize -> Scaled[
+0.033783783783783786`],FontColor -> RGBColor[0.9107287510704583`,0.33890687339431275`,
+0.20182187767614543`],StripOnInput -> False],TraditionalForm]],{-98.`,131.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"neither\"",FontSize -> Scaled[0.034823284823284825`],
+FontColor -> RGBColor[0.8949268664259606`,0.5032845776173072`,0.05843417978336459`],
+StripOnInput -> False],TraditionalForm]],{-68.`,-45.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"died\"",FontSize -> Scaled[0.0472972972972973`],FontColor -> RGBColor[
+0.8342400905885153`,0.4628267270590103`,0.0038160815296638794`],StripOnInput -> False],
+TraditionalForm]],{-122.`,114.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"pisa\"",FontSize -> Scaled[0.04521829521829522`],FontColor -> RGBColor[0.6897400905885174`,
+0.358`,0.5753998606330502`],StripOnInput -> False],TraditionalForm]],{124.`,-54.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"pagolo\"",FontSize -> Scaled[
+0.035862785862785865`],FontColor -> RGBColor[0.9986489531525362`,0.7507447657626809`,
+0.0036478264881522893`],StripOnInput -> False],TraditionalForm]],{-129.`,13.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"states\"",FontSize -> Scaled[0.04002079002079002`],
+FontColor -> RGBColor[0.26512246998569167`,0.6229020240114467`,0.73314696398283`],
+StripOnInput -> False],TraditionalForm]],{131.`,-28.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"forces\"",FontSize -> Scaled[0.04313929313929314`],FontColor -> RGBColor[
+0.9930578157165594`,0.7227890785827968`,0.01874389756528967`],StripOnInput -> False],
+TraditionalForm]],{14.`,-135.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"little\"",FontSize -> Scaled[0.04521829521829522`],FontColor -> RGBColor[0.9492067688690977`,
+0.5394711792460651`,0.10728609198218791`],StripOnInput -> False],TraditionalForm]],
+{-33.`,140.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"secure\"",FontSize -> Scaled[
+0.037941787941787944`],FontColor -> RGBColor[0.9840111653093676`,0.677555826546838`,
+0.04316985366470745`],StripOnInput -> False],TraditionalForm]],{0.`,141.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"reason\"",FontSize -> Scaled[0.04002079002079002`],
+FontColor -> RGBColor[0.8335801463353031`,0.3487839707329394`,0.3481997561078282`],
+StripOnInput -> False],TraditionalForm]],{-18.`,-141.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"city\"",FontSize -> Scaled[0.0472972972972973`],FontColor -> RGBColor[
+0.2187618985811806`,0.715`,0.5074848563512248`],StripOnInput -> False],TraditionalForm]],
+{134.`,8.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"orsini\"",FontSize -> Scaled[
+0.04002079002079002`],FontColor -> RGBColor[0.9307395679624266`,0.7498043964402695`,
+0.`],StripOnInput -> False],TraditionalForm]],{131.`,-40.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"taken\"",FontSize -> Scaled[0.04106029106029106`],FontColor -> RGBColor[
+0.31827505306025683`,0.715`,0.3808317506505822`],StripOnInput -> False],TraditionalForm]],
+{35.`,139.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"came\"",FontSize -> Scaled[
+0.04625779625779626`],FontColor -> RGBColor[0.8607200975568693`,0.34335598048862614`,
+0.30296650407188447`],StripOnInput -> False],TraditionalForm]],{47.`,-136.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"ability\"",FontSize -> Scaled[0.033783783783783786`],
+FontColor -> RGBColor[0.6672593867853922`,0.7205288207539324`,0.`],StripOnInput -> False],
+TraditionalForm]],{131.`,-65.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"given\"",FontSize -> Scaled[0.03898128898128898`],FontColor -> RGBColor[0.922066817647527`,
+0.5213778784316846`,0.08286013588277422`],StripOnInput -> False],TraditionalForm]],
+{120.`,82.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"times\"",FontSize -> Scaled[
+0.04313929313929314`],FontColor -> RGBColor[0.7896667828057927`,0.3575666434388414`,
+0.4213886953236787`],StripOnInput -> False],TraditionalForm]],{-61.`,-134.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"citizens\"",FontSize -> Scaled[0.036902286902286904`],
+FontColor -> RGBColor[0.15725938678540247`,0.715`,0.5857607804549424`],StripOnInput -> False],
+TraditionalForm]],{-62.`,142.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"say\"",FontSize -> Scaled[0.04521829521829522`],FontColor -> RGBColor[0.8745421494417032`,
+0.39318677583744527`,0.11135537360425793`],StripOnInput -> False],TraditionalForm]],
+{-63.`,-30.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"war\"",FontSize -> Scaled[
+0.05353430353430354`],FontColor -> RGBColor[0.8564488486273256`,0.42032672705901153`,
+0.06612212156831418`],StripOnInput -> False],TraditionalForm]],{64.`,140.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"sent\"",FontSize -> Scaled[0.05041580041580042`],
+FontColor -> RGBColor[0.6536293927965667`,0.37163285420200276`,0.6534265180085832`],
+StripOnInput -> False],TraditionalForm]],{-127.`,90.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"shall\"",FontSize -> Scaled[0.04106029106029106`],FontColor -> RGBColor[
+0.7277983389807635`,0.358`,0.5168487092603637`],StripOnInput -> False],TraditionalForm]],
+{134.`,-79.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"kept\"",FontSize -> Scaled[
+0.036902286902286904`],FontColor -> RGBColor[0.7989994773739094`,0.735166608597101`,
+0.`],StripOnInput -> False],TraditionalForm]],{76.`,-137.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"attack\"",FontSize -> Scaled[0.034823284823284825`],FontColor -> RGBColor[
+0.2198892179497479`,0.6590886256402017`,0.6788670615396974`],StripOnInput -> False],
+TraditionalForm]],{-112.`,-112.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"valour\"",FontSize -> Scaled[0.035862785862785865`],FontColor -> RGBColor[0.8064401951137368`,
+0.3542119609772526`,0.39343300814377197`],StripOnInput -> False],TraditionalForm]],
+{-92.`,-134.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"seen\"",FontSize -> Scaled[
+0.04937629937629938`],FontColor -> RGBColor[0.9784200278733908`,0.649600139366954`,
+0.058265924741844846`],StripOnInput -> False],TraditionalForm]],{93.`,141.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"come\"",FontSize -> Scaled[0.0420997920997921`],
+FontColor -> RGBColor[0.19193353076984873`,0.681453175384121`,0.6453202369238185`],
+StripOnInput -> False],TraditionalForm]],{-51.`,-143.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"house\"",FontSize -> Scaled[0.035862785862785865`],FontColor -> RGBColor[
+0.7042770479220728`,0.358`,0.5530353108891188`],StripOnInput -> False],TraditionalForm]],
+{-95.`,141.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"rome\"",FontSize -> Scaled[
+0.0420997920997921`],FontColor -> RGBColor[0.8781534541180211`,0.4921023027453475`,
+0.04333810870621905`],StripOnInput -> False],TraditionalForm]],{101.`,-137.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"born\"",FontSize -> Scaled[0.036902286902286904`],
+FontColor -> RGBColor[0.7658565873730018`,0.358`,0.4582975578876895`],StripOnInput -> False],
+TraditionalForm]],{-132.`,-88.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"know\"",FontSize -> Scaled[0.035862785862785865`],FontColor -> RGBColor[0.4177882075393331`,
+0.715`,0.25417864494993975`],StripOnInput -> False],TraditionalForm]],{-134.`,-102.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"lost\"",FontSize -> Scaled[
+0.035862785862785865`],FontColor -> RGBColor[0.8633598745697435`,0.40996018814538476`,
+0.08339968642435877`],StripOnInput -> False],TraditionalForm]],{-36.`,16.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"wise\"",FontSize -> Scaled[0.034823284823284825`],
+FontColor -> RGBColor[0.6453361616656581`,0.37647057236169945`,0.6741595958358548`],
+StripOnInput -> False],TraditionalForm]],{135.`,19.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"held\"",FontSize -> Scaled[0.035862785862785865`],FontColor -> RGBColor[
+0.9603267270590103`,0.5591336352950514`,0.10711783694067224`],StripOnInput -> False],
+TraditionalForm]],{-53.`,97.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"left\"",FontSize -> Scaled[0.036902286902286904`],FontColor -> RGBColor[0.8774935098648088`,
+0.34000129802703827`,0.2750108168919853`],StripOnInput -> False],TraditionalForm]],
+{49.`,-6.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"let\"",FontSize -> Scaled[
+0.037941787941787944`],FontColor -> RGBColor[0.8926354502560807`,0.366046824615879`,
+0.15658862564020168`],StripOnInput -> False],TraditionalForm]],{-134.`,-1.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"life\"",FontSize -> Scaled[0.037941787941787944`],
+FontColor -> RGBColor[0.4567336004533182`,0.4884598397280091`,0.85`],StripOnInput -> False],
+TraditionalForm]],{138.`,29.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"old\"",FontSize -> Scaled[0.035862785862785865`],FontColor -> RGBColor[0.529922539669161`,
+0.44454647619850335`,0.85`],StripOnInput -> False],TraditionalForm]],{-139.`,30.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"di\"",FontSize -> Scaled[0.035862785862785865`],
+FontColor -> RGBColor[0.3383114092015346`,0.5643508726387724`,0.8209736910418415`],
+StripOnInput -> False],TraditionalForm]],{-31.`,-4.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"1\"",FontSize -> Scaled[0.04417879417879418`],FontColor -> RGBColor[
+0.5019668524892619`,0.46131988850644284`,0.85`],StripOnInput -> False],TraditionalForm]],
+{7.`,-6.`},Center,Automatic]},{{}},StripOnInput -> False]},ImageSize -> Large,PlotRange -> {{-148.5`,147.5`},{-148.5`,148.5`}},
+DefaultBaseStyle -> {"Graphics",FontFamily -> "Source Sans Pro"},Method -> {"DefaultBoundaryStyle" -> Automatic,"DefaultGraphicsInteraction" -> {"Version" -> 1.2`,"TrackMousePosition" -> {True,False},"Effects" -> {"Highlight" -> {"ratio" -> 2},"HighlightPoint" -> {"ratio" -> 2},"Droplines" -> {"freeformCursorMode" -> True,"placement" -> {"x" -> "All","y" -> "None"}}}},"DefaultPlotStyle" -> Automatic}],StyleBox[
+"\"The Prince\"",Bold,14,StripOnInput -> False]},"Labeled",DisplayFunction -> Function[
+GridBox[{{ItemBox[Slot[2],DefaultBaseStyle -> "LabeledLabel"]},{TagBox[ItemBox[PaneBox[
+TagBox[Slot[1],"SkipImageSizeLevel"],Alignment -> {Center,Baseline},BaselinePosition -> Baseline],
+DefaultBaseStyle -> "Labeled"],"SkipImageSizeLevel"]}},GridBoxAlignment -> {"Columns" -> {{Center}},"Rows" -> {{Center}}},
+AutoDelete -> False,GridBoxItemSize -> {"Columns" -> {{Automatic}},"Rows" -> {{Automatic}}},
+BaselinePosition -> {2,1}]],InterpretationFunction -> Function[RowBox[{"Labeled","[",RowBox[
+{Slot[1],",",Slot[2],",","Top",",",RowBox[{"{","}"}]}],"]"}]]]],"Print",CellChangeTimes -> {3.9566000232387047`*^9,3.956600511014791`*^9,3.9566011949456778`*^9,3.956604280131473`*^9},
+CellLabel -> "During evaluation of In[90]:=",ExpressionUUID -> "9194e4bc-b33e-4d78-856a-a1a6cc4d13d5"],Cell[
+BoxData[
+TemplateBox[{GraphicsBox[{StyleBox[{InsetBox[BoxData[FormBox[StyleBox["\"war\"",FontSize -> Scaled[
+0.23569023569023567`],FontColor -> RGBColor[0.24`,0.6`,0.8`],StripOnInput -> False],
+TraditionalForm]],{0,0},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"army\"",
+FontSize -> Scaled[0.15669040614014934`],FontColor -> RGBColor[0.95`,0.627`,0.1425`],
+StripOnInput -> False],TraditionalForm]],{-0.5`,-35.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"great\"",FontSize -> Scaled[0.147649149850177`],FontColor -> RGBColor[
+0.455`,0.7`,0.21`],StripOnInput -> False],TraditionalForm]],{-0.5`,38.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"enemy\"",FontSize -> Scaled[0.12289685803992481`],
+FontColor -> RGBColor[0.922526`,0.385626`,0.209179`],StripOnInput -> False],TraditionalForm]],
+{-25.5`,-60.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"general\"",
+FontSize -> Scaled[0.10125712987048276`],FontColor -> RGBColor[0.8`,0.4`,0.76`],StripOnInput -> False],
+TraditionalForm]],{-16.5`,58.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"country\"",FontSize -> Scaled[0.08969617920461648`],FontColor -> RGBColor[0.40082222609352647`,
+0.5220066643438841`,0.85`],StripOnInput -> False],TraditionalForm]],{3.5`,80.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"defensive\"",FontSize -> Scaled[
+0.08347105192299616`],FontColor -> RGBColor[0.28026441037696703`,0.715`,0.4292089322474965`],
+StripOnInput -> False],TraditionalForm]],{2.5`,-88.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"object\"",FontSize -> Scaled[0.09547665453754961`],FontColor -> RGBColor[
+0.637`,0.65`,0.`],StripOnInput -> False],TraditionalForm]],{82.5`,-5.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"position\"",FontSize -> Scaled[0.0816924441282475`],FontColor -> RGBColor[
+0.5833680111493557`,0.4126186601628758`,0.8290799721266107`],StripOnInput -> False],
+TraditionalForm]],{-27.5`,94.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"battle\"",FontSize -> Scaled[0.10481434545998009`],FontColor -> RGBColor[0.4`,
+0.64`,1.`],StripOnInput -> False],TraditionalForm]],{-87.5`,-13.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"point\"",FontSize -> Scaled[0.09206765626428134`],FontColor -> RGBColor[
+0.915`,0.3325`,0.2125`],StripOnInput -> False],TraditionalForm]],{76.5`,28.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"means\"",FontSize -> Scaled[0.10525899740866725`],
+FontColor -> RGBColor[0.772079`,0.431554`,0.102387`],StripOnInput -> False],TraditionalForm]],
+{69.5`,-69.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"enemy\[CloseCurlyQuote]s\"",
+FontSize -> Scaled[0.07176188394090081`],FontColor -> RGBColor[0.28240003484173815`,
+0.6090799721266095`,0.7538800418100857`],StripOnInput -> False],TraditionalForm]],
+{-86.5`,20.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"defence\"",
+FontSize -> Scaled[0.0816924441282475`],FontColor -> RGBColor[0.838355547812947`,
+0.44746667828057946`,0.0208888695323676`],StripOnInput -> False],TraditionalForm]],
+{86.5`,-42.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"time\"",FontSize -> Scaled[
+0.10733403983587403`],FontColor -> RGBColor[0.578`,0.51`,0.85`],StripOnInput -> False],
+TraditionalForm]],{75.5`,52.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"force\"",FontSize -> Scaled[0.1037768242463767`],FontColor -> RGBColor[1.`,0.75`,
+0.`],StripOnInput -> False],TraditionalForm]],{-81.5`,-39.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"circumstances\"",FontSize -> Scaled[0.05694015231799531`],
+FontColor -> RGBColor[0.7748409210981391`,0.358`,0.4444755060028629`],StripOnInput -> False],
+TraditionalForm]],{-6.5`,-103.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"forces\"",FontSize -> Scaled[0.08717648482872253`],FontColor -> RGBColor[0.9728288904374106`,
+0.621644452187053`,0.07336199581899142`],StripOnInput -> False],TraditionalForm]],
+{52.5`,96.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"attack\"",FontSize -> Scaled[
+0.08643539824757726`],FontColor -> RGBColor[0.736782672705901`,0.358`,0.5030266573755369`],
+StripOnInput -> False],TraditionalForm]],{-13.5`,115.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"place\"",FontSize -> Scaled[0.07235475320581704`],FontColor -> RGBColor[
+0.8439466852489265`,0.3467106629502147`,0.3309221912517893`],StripOnInput -> False],
+TraditionalForm]],{-87.5`,39.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"greater\"",FontSize -> Scaled[0.058570542796514906`],FontColor -> RGBColor[0.8857244243136628`,
+0.3764133635295058`,0.1393110607841571`],StripOnInput -> False],TraditionalForm]],
+{-79.5`,71.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"troops\"",FontSize -> Scaled[
+0.06034915059126358`],FontColor -> RGBColor[0.5407932311309059`,0.715`,0.09762679674248334`],
+StripOnInput -> False],TraditionalForm]],{70.5`,73.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"military\"",FontSize -> Scaled[0.055161544523246654`],
+FontColor -> RGBColor[0.8613800418100862`,0.48092002787339083`,0.02824203762907758`],
+StripOnInput -> False],TraditionalForm]],{-73.5`,-80.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"offensive\"",FontSize -> Scaled[0.051604328933749326`],
+FontColor -> RGBColor[0.37977756485605163`,0.715`,0.3025558265468435`],StripOnInput -> False],
+TraditionalForm]],{-0.5`,-119.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"action\"",FontSize -> Scaled[0.06776001640271632`],FontColor -> RGBColor[0.9324333565611593`,
+0.5282889043741062`,0.0921900209050434`],StripOnInput -> False],TraditionalForm]],
+{77.5`,-90.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"victory\"",
+FontSize -> Scaled[0.05190076356620744`],FontColor -> RGBColor[0.9637822400302223`,
+0.5764112001511111`,0.0977879519184`],StripOnInput -> False],TraditionalForm]],{-99.5`,-59.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"combat\"",FontSize -> Scaled[
+0.05219719819866554`],FontColor -> RGBColor[0.35558897405758294`,0.5505288207539337`,
+0.8417067688690995`],StripOnInput -> False],TraditionalForm]],{55.5`,107.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"necessary\"",FontSize -> Scaled[0.04226663801131886`],
+FontColor -> RGBColor[0.8493197142977551`,0.7407577460330839`,0.`],StripOnInput -> False],
+TraditionalForm]],{92.5`,11.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"influence\"",FontSize -> Scaled[0.04730602676310673`],FontColor -> RGBColor[0.6536293927965667`,
+0.37163285420200276`,0.6534265180085832`],StripOnInput -> False],TraditionalForm]],
+{68.5`,-106.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"make\"",FontSize -> Scaled[
+0.06227597570224129`],FontColor -> RGBColor[0.6753413537738198`,0.3589675436319385`,
+0.5991466155654507`],StripOnInput -> False],TraditionalForm]],{103.5`,-26.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"case\"",FontSize -> Scaled[0.07843166317120828`],
+FontColor -> RGBColor[0.8996399512215667`,0.7463488834690629`,0.`],StripOnInput -> False],
+TraditionalForm]],{-81.5`,-94.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"things\"",FontSize -> Scaled[0.050715025036375`],FontColor -> RGBColor[0.9810598048862722`,
+0.7553955338762525`,0.`],StripOnInput -> False],TraditionalForm]],{-90.5`,84.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"certain\"",FontSize -> Scaled[
+0.051604328933749326`],FontColor -> RGBColor[0.7132613816472081`,0.358`,0.5392132590042952`],
+StripOnInput -> False],TraditionalForm]],{-70.5`,106.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"advantage\"",FontSize -> Scaled[0.03974694363542493`],
+FontColor -> RGBColor[0.6319174318193065`,0.38429816477207124`,0.7077064204517338`],
+StripOnInput -> False],TraditionalForm]],{-98.5`,3.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"nature\"",FontSize -> Scaled[0.058570542796514906`],FontColor -> RGBColor[
+0.47401116530937026`,0.47809330081437784`,0.85`],StripOnInput -> False],TraditionalForm]],
+{-57.5`,-117.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"different\"",
+FontSize -> Scaled[0.045823853600816186`],FontColor -> RGBColor[0.9038177251280404`,
+0.3492734123079395`,0.18454431282010084`],StripOnInput -> False],TraditionalForm]],
+{44.5`,120.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"important\"",
+FontSize -> Scaled[0.038412987789363424`],FontColor -> RGBColor[0.31827505306025683`,
+0.715`,0.3808317506505822`],StripOnInput -> False],TraditionalForm]],{55.5`,-119.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"strategic\"",FontSize -> Scaled[
+0.04197020337886075`],FontColor -> RGBColor[0.3103557220216354`,0.5867154223826917`,
+0.7874268664259625`],StripOnInput -> False],TraditionalForm]],{-70.5`,121.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"possible\"",FontSize -> Scaled[0.039450509002966816`],
+FontColor -> RGBColor[0.38354466123747527`,0.5323732032575149`,0.85`],StripOnInput -> False],
+TraditionalForm]],{-100.5`,-109.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"generally\"",FontSize -> Scaled[0.04019159558411209`],FontColor -> RGBColor[0.7896667828057927`,
+0.3575666434388414`,0.4213886953236787`],StripOnInput -> False],TraditionalForm]],
+{93.5`,119.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"cases\"",FontSize -> Scaled[
+0.057977673531598696`],FontColor -> RGBColor[0.9874666782805795`,0.6948333914028977`,
+0.033839968642435214`],StripOnInput -> False],TraditionalForm]],{105.5`,85.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"theory\"",FontSize -> Scaled[0.04523098433589996`],
+FontColor -> RGBColor[0.428777913273419`,0.5052332520359486`,0.85`],StripOnInput -> False],
+TraditionalForm]],{103.5`,97.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"completely\"",FontSize -> Scaled[0.03367003367003367`],FontColor -> RGBColor[0.6672593867853922`,
+0.7205288207539324`,0.`],StripOnInput -> False],TraditionalForm]],{-0.5`,130.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"assailant\"",FontSize -> Scaled[
+0.043600593857380354`],FontColor -> RGBColor[0.7513196300394465`,0.358`,0.48066210763162087`],
+StripOnInput -> False],TraditionalForm]],{-0.5`,-131.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"moment\"",FontSize -> Scaled[0.03811655315690532`],FontColor -> RGBColor[
+0.8335801463353031`,0.3487839707329394`,0.3481997561078282`],StripOnInput -> False],
+TraditionalForm]],{112.5`,-56.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"campaign\"",FontSize -> Scaled[0.034707554883637054`],FontColor -> RGBColor[0.8633598745697435`,
+0.40996018814538476`,0.08339968642435877`],StripOnInput -> False],TraditionalForm]],
+{-84.5`,52.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"according\"",
+FontSize -> Scaled[0.034707554883637054`],FontColor -> RGBColor[0.4177882075393331`,
+0.715`,0.25417864494993975`],StripOnInput -> False],TraditionalForm]],{45.5`,-130.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"certainly\"",FontSize -> Scaled[
+0.04122911679771548`],FontColor -> RGBColor[0.47929071933511125`,0.715`,0.1759027208462221`],
+StripOnInput -> False],TraditionalForm]],{-48.5`,131.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"way\"",FontSize -> Scaled[0.055754413788162864`],FontColor -> RGBColor[
+0.16397784358994957`,0.7038177251280403`,0.6117734123079395`],StripOnInput -> False],
+TraditionalForm]],{119.5`,41.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"decision\"",FontSize -> Scaled[0.03930229168673776`],FontColor -> RGBColor[0.969373377466199`,
+0.6043668873309952`,0.08269188084126262`],StripOnInput -> False],TraditionalForm]],
+{115.5`,63.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"strength\"",
+FontSize -> Scaled[0.039598726319195865`],FontColor -> RGBColor[0.9046334610863751`,
+0.334573307782725`,0.22977756485604156`],StripOnInput -> False],TraditionalForm]],
+{47.5`,131.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"power\"",FontSize -> Scaled[
+0.04197020337886075`],FontColor -> RGBColor[0.8607200975568693`,0.34335598048862614`,
+0.30296650407188447`],StripOnInput -> False],TraditionalForm]],{-115.5`,-70.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"strategy\"",FontSize -> Scaled[0.03782011852444721`],
+FontColor -> RGBColor[0.26512246998569167`,0.6229020240114467`,0.73314696398283`],
+StripOnInput -> False],TraditionalForm]],{-46.5`,-131.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"ground\"",FontSize -> Scaled[0.04315594190869319`],FontColor -> RGBColor[
+0.2187618985811806`,0.715`,0.5074848563512248`],StripOnInput -> False],TraditionalForm]],
+{-112.5`,97.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"order\"",FontSize -> Scaled[
+0.054420457942101375`],FontColor -> RGBColor[0.7678998606330495`,0.7317110956258943`,
+0.`],StripOnInput -> False],TraditionalForm]],{100.5`,-118.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"resistance\"",FontSize -> Scaled[0.03381825098626272`],
+FontColor -> RGBColor[0.6453361616656581`,0.37647057236169945`,0.6741595958358548`],
+StripOnInput -> False],TraditionalForm]],{89.5`,129.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"number\"",FontSize -> Scaled[0.04078446484902831`],FontColor -> RGBColor[
+0.5019668524892619`,0.46131988850644284`,0.85`],StripOnInput -> False],TraditionalForm]],
+{-114.5`,108.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"principal\"",
+FontSize -> Scaled[0.03411468561872083`],FontColor -> RGBColor[0.8949268664259606`,
+0.5032845776173072`,0.05843417978336459`],StripOnInput -> False],TraditionalForm]],
+{116.5`,-103.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"relations\"",
+FontSize -> Scaled[0.03693081462707288`],FontColor -> RGBColor[0.6670481226429111`,
+0.3638052617916352`,0.6198796933927223`],StripOnInput -> False],TraditionalForm]],
+{-84.5`,-129.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"form\"",FontSize -> Scaled[
+0.05145611161752027`],FontColor -> RGBColor[0.8564488486273256`,0.42032672705901153`,
+0.06612212156831418`],StripOnInput -> False],TraditionalForm]],{-119.5`,-86.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"shall\"",FontSize -> Scaled[0.05056680772014594`],
+FontColor -> RGBColor[0.8168067340273636`,0.3521386531945273`,0.3761554432877274`],
+StripOnInput -> False],TraditionalForm]],{119.5`,-89.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"points\"",FontSize -> Scaled[0.04004337826788304`],FontColor -> RGBColor[
+0.8781534541180211`,0.4921023027453475`,0.04333810870621905`],StripOnInput -> False],
+TraditionalForm]],{-120.5`,71.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"result\"",FontSize -> Scaled[0.04967750382277161`],FontColor -> RGBColor[0.23716678280579248`,
+0.645266573755366`,0.699600139366951`],StripOnInput -> False],TraditionalForm]],{-112.5`,120.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"view\"",FontSize -> Scaled[
+0.05145611161752027`],FontColor -> RGBColor[0.5472001045252132`,0.43417993728487203`,
+0.85`],StripOnInput -> False],TraditionalForm]],{-122.5`,-122.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"account\"",FontSize -> Scaled[0.03811655315690532`],FontColor -> RGBColor[
+0.5750747800184488`,0.4174563783225715`,0.8498130499538777`],StripOnInput -> False],
+TraditionalForm]],{87.5`,-131.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"retreat\"",FontSize -> Scaled[0.045972070917045235`],FontColor -> RGBColor[0.6361597700445392`,
+0.7170733077827265`,0.`],StripOnInput -> False],TraditionalForm]],{127.5`,22.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"direction\"",FontSize -> Scaled[
+0.03515220683232422`],FontColor -> RGBColor[0.9603267270590103`,0.5591336352950514`,
+0.10711783694067224`],StripOnInput -> False],TraditionalForm]],{125.5`,49.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"defender\"",FontSize -> Scaled[0.03559685878101138`],
+FontColor -> RGBColor[0.15725938678540247`,0.715`,0.5857607804549424`],StripOnInput -> False],
+TraditionalForm]],{-0.5`,140.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"small\"",FontSize -> Scaled[0.044786332387212795`],FontColor -> RGBColor[0.9784200278733908`,
+0.649600139366954`,0.058265924741844846`],StripOnInput -> False],TraditionalForm]],
+{-128.5`,32.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"subject\"",
+FontSize -> Scaled[0.03648616267838571`],FontColor -> RGBColor[0.4567336004533182`,
+0.4884598397280091`,0.85`],StripOnInput -> False],TraditionalForm]],{-124.5`,48.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"march\"",FontSize -> Scaled[
+0.04004337826788304`],FontColor -> RGBColor[0.19193353076984873`,0.681453175384121`,
+0.6453202369238185`],StripOnInput -> False],TraditionalForm]],{-130.5`,-33.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"state\"",FontSize -> Scaled[0.05264185014735271`],
+FontColor -> RGBColor[0.8878600487784333`,0.33792799024431336`,0.2577332520359445`],
+StripOnInput -> False],TraditionalForm]],{130.5`,-67.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"danger\"",FontSize -> Scaled[0.03530042414855327`],FontColor -> RGBColor[
+0.8774935098648088`,0.34000129802703827`,0.2750108168919853`],StripOnInput -> False],
+TraditionalForm]],{-129.5`,-45.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"natural\"",FontSize -> Scaled[0.04137733411394453`],FontColor -> RGBColor[0.6897400905885174`,
+0.358`,0.5753998606330502`],StripOnInput -> False],TraditionalForm]],{-0.5`,-142.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"decisive\"",FontSize -> Scaled[
+0.03515220683232422`],FontColor -> RGBColor[0.3383114092015346`,0.5643508726387724`,
+0.8209736910418415`],StripOnInput -> False],TraditionalForm]],{-126.5`,57.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"strong\"",FontSize -> Scaled[0.035448641464782334`],
+FontColor -> RGBColor[0.7989994773739094`,0.735166608597101`,0.`],StripOnInput -> False],
+TraditionalForm]],{132.5`,4.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"effect\"",FontSize -> Scaled[0.04137733411394453`],FontColor -> RGBColor[0.9492067688690977`,
+0.5394711792460651`,0.10728609198218791`],StripOnInput -> False],TraditionalForm]],
+{34.5`,141.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"corps\"",FontSize -> Scaled[
+0.04078446484902831`],FontColor -> RGBColor[0.8745421494417032`,0.39318677583744527`,
+0.11135537360425793`],StripOnInput -> False],TraditionalForm]],{34.5`,-141.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"theatre\"",FontSize -> Scaled[0.034707554883637054`],
+FontColor -> RGBColor[0.529922539669161`,0.44454647619850335`,0.85`],StripOnInput -> False],
+TraditionalForm]],{-38.5`,141.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"armies\"",FontSize -> Scaled[0.034559337567408`],FontColor -> RGBColor[0.9986489531525362`,
+0.7507447657626809`,0.0036478264881522893`],StripOnInput -> False],TraditionalForm]],
+{-125.5`,80.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"results\"",
+FontSize -> Scaled[0.03559685878101138`],FontColor -> RGBColor[0.8510135028964549`,
+0.47400900193096995`,0.018912152606809424`],StripOnInput -> False],TraditionalForm]],
+{-49.5`,-142.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"lines\"",
+FontSize -> Scaled[0.038264770473134375`],FontColor -> RGBColor[0.845266573755366`,
+0.437100139366951`,0.03816643438841502`],StripOnInput -> False],TraditionalForm]],
+{133.5`,-7.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"use\"",FontSize -> Scaled[
+0.05456867525833043`],FontColor -> RGBColor[0.6184987019729621`,0.39212575718243875`,
+0.7412532450675947`],StripOnInput -> False],TraditionalForm]],{-116.5`,-96.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"quite\"",FontSize -> Scaled[0.034559337567408`],
+FontColor -> RGBColor[0.2198892179497479`,0.6590886256402017`,0.6788670615396974`],
+StripOnInput -> False],TraditionalForm]],{135.5`,-17.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"mind\"",FontSize -> Scaled[0.03604151072969855`],FontColor -> RGBColor[
+0.7658565873730018`,0.358`,0.4582975578876895`],StripOnInput -> False],TraditionalForm]],
+{-135.5`,-58.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"moral\"",
+FontSize -> Scaled[0.03367003367003367`],FontColor -> RGBColor[0.9107287510704583`,
+0.33890687339431275`,0.20182187767614543`],StripOnInput -> False],TraditionalForm]],
+{107.5`,106.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"hand\"",FontSize -> Scaled[
+0.03811655315690532`],FontColor -> RGBColor[0.9307395679624266`,0.7498043964402695`,
+0.`],StripOnInput -> False],TraditionalForm]],{63.5`,-142.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"just\"",FontSize -> Scaled[0.039154074370508704`],FontColor -> RGBColor[
+0.7277983389807635`,0.358`,0.5168487092603637`],StripOnInput -> False],TraditionalForm]],
+{62.5`,-23.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"long\"",FontSize -> Scaled[
+0.035448641464782334`],FontColor -> RGBColor[0.6102054708420535`,0.39696347534213544`,
+0.7619863228948663`],StripOnInput -> False],TraditionalForm]],{-135.5`,13.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"line\"",FontSize -> Scaled[0.04878819992539728`],
+FontColor -> RGBColor[0.9052934053395919`,0.510195603559728`,0.06776406480563275`],
+StripOnInput -> False],TraditionalForm]],{-68.5`,141.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"kind\"",FontSize -> Scaled[0.03722724925953099`],FontColor -> RGBColor[
+0.922066817647527`,0.5213778784316846`,0.08286013588277422`],StripOnInput -> False],
+TraditionalForm]],{62.5`,142.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"men\"",FontSize -> Scaled[0.04256307264377697`],FontColor -> RGBColor[0.596786740995709`,
+0.404791067752503`,0.7955331475107271`],StripOnInput -> False],TraditionalForm]],
+{55.5`,-55.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"like\"",FontSize -> Scaled[
+0.04315594190869319`],FontColor -> RGBColor[0.8342400905885153`,0.4628267270590103`,
+0.0038160815296638794`],StripOnInput -> False],TraditionalForm]],{-136.5`,-3.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"say\"",FontSize -> Scaled[
+0.039598726319195865`],FontColor -> RGBColor[0.7175796237092107`,0.7261199581899123`,
+0.`],StripOnInput -> False],TraditionalForm]],{-134.5`,-14.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"river\"",FontSize -> Scaled[0.03485577219986611`],FontColor -> RGBColor[
+0.7042770479220728`,0.358`,0.5530353108891188`],StripOnInput -> False],TraditionalForm]],
+{135.5`,-30.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"little\"",
+FontSize -> Scaled[0.03678259731084382`],FontColor -> RGBColor[0.8926354502560807`,
+0.366046824615879`,0.15658862564020168`],StripOnInput -> False],TraditionalForm]],
+{-76.5`,-138.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"idea\"",FontSize -> Scaled[
+0.03678259731084382`],FontColor -> RGBColor[0.5788038738141875`,0.715`,0.049249615145579635`],
+StripOnInput -> False],TraditionalForm]],{-89.5`,132.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"mere\"",FontSize -> Scaled[0.034559337567408`],FontColor -> RGBColor[
+0.8064401951137368`,0.3542119609772526`,0.39343300814377197`],StripOnInput -> False],
+TraditionalForm]],{134.5`,71.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"real\"",FontSize -> Scaled[0.03633794536215666`],FontColor -> RGBColor[0.9840111653093676`,
+0.677555826546838`,0.04316985366470745`],StripOnInput -> False],TraditionalForm]],
+{136.5`,-41.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"far\"",FontSize -> Scaled[
+0.04019159558411209`],FontColor -> RGBColor[0.9930578157165594`,0.7227890785827968`,
+0.01874389756528967`],StripOnInput -> False],TraditionalForm]],{134.5`,79.5`},Center,
+Automatic]},{{}},StripOnInput -> False]},ImageSize -> Large,PlotRange -> {{-149.`,148.`},{-149.`,149.`}},
+DefaultBaseStyle -> {"Graphics",FontFamily -> "Source Sans Pro"},Method -> {"DefaultBoundaryStyle" -> Automatic,"DefaultGraphicsInteraction" -> {"Version" -> 1.2`,"TrackMousePosition" -> {True,False},"Effects" -> {"Highlight" -> {"ratio" -> 2},"HighlightPoint" -> {"ratio" -> 2},"Droplines" -> {"freeformCursorMode" -> True,"placement" -> {"x" -> "All","y" -> "None"}}}},"DefaultPlotStyle" -> Automatic}],StyleBox[
+"\"On War\"",Bold,14,StripOnInput -> False]},"Labeled",DisplayFunction -> Function[
+GridBox[{{ItemBox[Slot[2],DefaultBaseStyle -> "LabeledLabel"]},{TagBox[ItemBox[PaneBox[
+TagBox[Slot[1],"SkipImageSizeLevel"],Alignment -> {Center,Baseline},BaselinePosition -> Baseline],
+DefaultBaseStyle -> "Labeled"],"SkipImageSizeLevel"]}},GridBoxAlignment -> {"Columns" -> {{Center}},"Rows" -> {{Center}}},
+AutoDelete -> False,GridBoxItemSize -> {"Columns" -> {{Automatic}},"Rows" -> {{Automatic}}},
+BaselinePosition -> {2,1}]],InterpretationFunction -> Function[RowBox[{"Labeled","[",RowBox[
+{Slot[1],",",Slot[2],",","Top",",",RowBox[{"{","}"}]}],"]"}]]]],"Print",CellChangeTimes -> {3.9566000232387047`*^9,3.956600511014791`*^9,3.9566011949456778`*^9,3.956604286323791`*^9},
+CellLabel -> "During evaluation of In[90]:=",ExpressionUUID -> "7bb48bc6-f77e-4695-a2f2-731fd255f090"],Cell[
+BoxData[
+TemplateBox[{GraphicsBox[{StyleBox[{InsetBox[BoxData[FormBox[StyleBox["\"happiness\"",
+FontSize -> Scaled[0.18766756032171583`],FontColor -> RGBColor[0.24`,0.6`,0.8`],StripOnInput -> False],
+TraditionalForm]],{0,0},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"justice\"",
+FontSize -> Scaled[0.18000765990042128`],FontColor -> RGBColor[0.95`,0.627`,0.1425`],
+StripOnInput -> False],TraditionalForm]],{0.`,-52.`},Center,Automatic],InsetBox[BoxData[
+FormBox[StyleBox["\"person\"",FontSize -> Scaled[0.1171964764458062`],FontColor -> RGBColor[
+0.772079`,0.431554`,0.102387`],StripOnInput -> False],TraditionalForm]],{-5.`,43.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"human\"",FontSize -> Scaled[
+0.13251627728839527`],FontColor -> RGBColor[0.455`,0.7`,0.21`],StripOnInput -> False],
+TraditionalForm]],{0.`,71.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"good\"",FontSize -> Scaled[0.12638835695135964`],FontColor -> RGBColor[0.922526`,
+0.385626`,0.209179`],StripOnInput -> False],TraditionalForm]],{-13.`,-94.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"principle\"",FontSize -> Scaled[0.09881271543469934`],
+FontColor -> RGBColor[0.637`,0.65`,0.`],StripOnInput -> False],TraditionalForm]],
+{5.`,102.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"morality\"",FontSize -> Scaled[
+0.09574875526618154`],FontColor -> RGBColor[0.915`,0.3325`,0.2125`],StripOnInput -> False],
+TraditionalForm]],{24.`,-121.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"feeling\"",FontSize -> Scaled[0.09881271543469934`],FontColor -> RGBColor[0.8`,
+0.4`,0.76`],StripOnInput -> False],TraditionalForm]],{19.`,130.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"utility\"",FontSize -> Scaled[0.10340865568747606`],FontColor -> RGBColor[
+1.`,0.75`,0.`],StripOnInput -> False],TraditionalForm]],{102.`,35.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"moral\"",FontSize -> Scaled[0.12485637686710073`],FontColor -> RGBColor[
+0.578`,0.51`,0.85`],StripOnInput -> False],TraditionalForm]],{91.`,-87.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"right\"",FontSize -> Scaled[0.10953657602451168`],
+FontColor -> RGBColor[0.4`,0.64`,1.`],StripOnInput -> False],TraditionalForm]],{-107.`,44.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"utilitarian\"",FontSize -> Scaled[
+0.08808885484488702`],FontColor -> RGBColor[0.40082222609352647`,0.5220066643438841`,
+0.85`],StripOnInput -> False],TraditionalForm]],{-68.`,-142.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"general\"",FontSize -> Scaled[0.0819609345078514`],FontColor -> RGBColor[
+0.9728288904374106`,0.621644452187053`,0.07336199581899142`],StripOnInput -> False],
+TraditionalForm]],{-79.`,121.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"pleasure\"",FontSize -> Scaled[0.07583301417081578`],FontColor -> RGBColor[0.5833680111493557`,
+0.4126186601628758`,0.8290799721266107`],StripOnInput -> False],TraditionalForm]],
+{-89.`,137.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"obligation\"",
+FontSize -> Scaled[0.05744925315970892`],FontColor -> RGBColor[0.7748409210981391`,
+0.358`,0.4444755060028629`],StripOnInput -> False],TraditionalForm]],{-108.`,-103.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"standard\"",FontSize -> Scaled[
+0.062045193412485634`],FontColor -> RGBColor[0.6753413537738198`,0.3589675436319385`,
+0.5991466155654507`],StripOnInput -> False],TraditionalForm]],{76.`,145.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"mankind\"",FontSize -> Scaled[0.06510915358100344`],
+FontColor -> RGBColor[0.9324333565611593`,0.5282889043741062`,0.0921900209050434`],
+StripOnInput -> False],TraditionalForm]],{116.`,60.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"things\"",FontSize -> Scaled[0.06664113366526235`],FontColor -> RGBColor[
+0.28240003484173815`,0.6090799721266095`,0.7538800418100857`],StripOnInput -> False],
+TraditionalForm]],{-102.`,72.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"desire\"",FontSize -> Scaled[0.08042895442359249`],FontColor -> RGBColor[0.736782672705901`,
+0.358`,0.5030266573755369`],StripOnInput -> False],TraditionalForm]],{-128.`,-39.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"particular\"",FontSize -> Scaled[
+0.04978935273841441`],FontColor -> RGBColor[0.7132613816472081`,0.358`,0.5392132590042952`],
+StripOnInput -> False],TraditionalForm]],{128.`,-34.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"opinion\"",FontSize -> Scaled[0.055917273075450025`],
+FontColor -> RGBColor[0.8613800418100862`,0.48092002787339083`,0.02824203762907758`],
+StripOnInput -> False],TraditionalForm]],{105.`,80.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"society\"",FontSize -> Scaled[0.05744925315970892`],FontColor -> RGBColor[
+0.16397784358994957`,0.7038177251280403`,0.6117734123079395`],StripOnInput -> False],
+TraditionalForm]],{-102.`,89.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"conduct\"",FontSize -> Scaled[0.058981233243967826`],FontColor -> RGBColor[0.8857244243136628`,
+0.3764133635295058`,0.1393110607841571`],StripOnInput -> False],TraditionalForm]],
+{108.`,97.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"question\"",FontSize -> Scaled[
+0.04978935273841441`],FontColor -> RGBColor[0.37977756485605163`,0.715`,0.3025558265468435`],
+StripOnInput -> False],TraditionalForm]],{-120.`,-60.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"means\"",FontSize -> Scaled[0.07583301417081578`],FontColor -> RGBColor[
+0.838355547812947`,0.44746667828057946`,0.0208888695323676`],StripOnInput -> False],
+TraditionalForm]],{35.`,-149.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"persons\"",FontSize -> Scaled[0.0513213328226733`],FontColor -> RGBColor[0.8878600487784333`,
+0.33792799024431336`,0.2577332520359445`],StripOnInput -> False],TraditionalForm]],
+{124.`,-51.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"individual\"",
+FontSize -> Scaled[0.0513213328226733`],FontColor -> RGBColor[0.7678998606330495`,
+0.7317110956258943`,0.`],StripOnInput -> False],TraditionalForm]],{-8.`,153.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"sentiment\"",FontSize -> Scaled[0.04978935273841441`],
+FontColor -> RGBColor[0.8564488486273256`,0.42032672705901153`,0.06612212156831418`],
+StripOnInput -> False],TraditionalForm]],{112.`,114.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"virtue\"",FontSize -> Scaled[0.062045193412485634`],FontColor -> RGBColor[
+0.5407932311309059`,0.715`,0.09762679674248334`],StripOnInput -> False],TraditionalForm]],
+{-125.`,-80.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"doctrine\"",
+FontSize -> Scaled[0.0482573726541555`],FontColor -> RGBColor[0.9810598048862722`,
+0.7553955338762525`,0.`],StripOnInput -> False],TraditionalForm]],{119.`,-113.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"law\"",FontSize -> Scaled[
+0.07889697433933358`],FontColor -> RGBColor[0.28026441037696703`,0.715`,0.4292089322474965`],
+StripOnInput -> False],TraditionalForm]],{-72.`,154.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"necessary\"",FontSize -> Scaled[0.03906549214860207`],
+FontColor -> RGBColor[0.7896667828057927`,0.3575666434388414`,0.4213886953236787`],
+StripOnInput -> False],TraditionalForm]],{-93.`,-121.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"case\"",FontSize -> Scaled[0.07430103408655687`],FontColor -> RGBColor[
+0.8996399512215667`,0.7463488834690629`,0.`],StripOnInput -> False],TraditionalForm]],
+{110.`,-127.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"unjust\"",FontSize -> Scaled[
+0.04978935273841441`],FontColor -> RGBColor[0.5472001045252132`,0.43417993728487203`,
+0.85`],StripOnInput -> False],TraditionalForm]],{100.`,-148.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"principles\"",FontSize -> Scaled[0.03600153198008426`],
+FontColor -> RGBColor[0.845266573755366`,0.437100139366951`,0.03816643438841502`],
+StripOnInput -> False],TraditionalForm]],{54.`,-32.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"feelings\"",FontSize -> Scaled[0.04519341248563769`],
+FontColor -> RGBColor[0.9038177251280404`,0.3492734123079395`,0.18454431282010084`],
+StripOnInput -> False],TraditionalForm]],{-120.`,155.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"injustice\"",FontSize -> Scaled[0.03906549214860207`],
+FontColor -> RGBColor[0.9930578157165594`,0.7227890785827968`,0.01874389756528967`],
+StripOnInput -> False],TraditionalForm]],{135.`,127.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"social\"",FontSize -> Scaled[0.0513213328226733`],FontColor -> RGBColor[
+0.35558897405758294`,0.5505288207539337`,0.8417067688690995`],StripOnInput -> False],
+TraditionalForm]],{-27.`,-165.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"nature\"",FontSize -> Scaled[0.052853312906932216`],FontColor -> RGBColor[0.6184987019729621`,
+0.39212575718243875`,0.7412532450675947`],StripOnInput -> False],TraditionalForm]],
+{58.`,163.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"pleasures\"",
+FontSize -> Scaled[0.03906549214860207`],FontColor -> RGBColor[0.19193353076984873`,
+0.681453175384121`,0.6453202369238185`],StripOnInput -> False],TraditionalForm]],
+{-4.`,167.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"character\"",
+FontSize -> Scaled[0.04519341248563769`],FontColor -> RGBColor[0.9052934053395919`,
+0.510195603559728`,0.06776406480563275`],StripOnInput -> False],TraditionalForm]],
+{31.`,-167.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"common\"",FontSize -> Scaled[
+0.04519341248563769`],FontColor -> RGBColor[0.6536293927965667`,0.37163285420200276`,
+0.6534265180085832`],StripOnInput -> False],TraditionalForm]],{-82.`,-159.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"utilitarianism\"",FontSize -> Scaled[
+0.03446955189582536`],FontColor -> RGBColor[0.6670481226429111`,0.3638052617916352`,
+0.6198796933927223`],StripOnInput -> False],TraditionalForm]],{101.`,-166.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"think\"",FontSize -> Scaled[0.0513213328226733`],
+FontColor -> RGBColor[0.9637822400302223`,0.5764112001511111`,0.0977879519184`],StripOnInput -> False],
+TraditionalForm]],{-149.`,102.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"life\"",FontSize -> Scaled[0.06817311374952126`],FontColor -> RGBColor[0.8439466852489265`,
+0.3467106629502147`,0.3309221912517893`],StripOnInput -> False],TraditionalForm]],
+{-151.`,60.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"capable\"",FontSize -> Scaled[
+0.03753351206434316`],FontColor -> RGBColor[0.8781534541180211`,0.4921023027453475`,
+0.04333810870621905`],StripOnInput -> False],TraditionalForm]],{-147.`,-120.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"idea\"",FontSize -> Scaled[0.05744925315970892`],
+FontColor -> RGBColor[0.9874666782805795`,0.6948333914028977`,0.033839968642435214`],
+StripOnInput -> False],TraditionalForm]],{-154.`,81.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"wrong\"",FontSize -> Scaled[0.04212945231711988`],FontColor -> RGBColor[
+0.8607200975568693`,0.34335598048862614`,0.30296650407188447`],StripOnInput -> False],
+TraditionalForm]],{109.`,162.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"action\"",FontSize -> Scaled[0.046725392569896586`],FontColor -> RGBColor[0.8168067340273636`,
+0.3521386531945273`,0.3761554432877274`],StripOnInput -> False],TraditionalForm]],
+{143.`,140.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"people\"",FontSize -> Scaled[
+0.04059747223286097`],FontColor -> RGBColor[0.8745421494417032`,0.39318677583744527`,
+0.11135537360425793`],StripOnInput -> False],TraditionalForm]],{147.`,-142.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"expediency\"",FontSize -> Scaled[
+0.02987361164304864`],FontColor -> RGBColor[0.8774935098648088`,0.34000129802703827`,
+0.2750108168919853`],StripOnInput -> False],TraditionalForm]],{-22.`,17.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"make\"",FontSize -> Scaled[0.046725392569896586`],
+FontColor -> RGBColor[0.23716678280579248`,0.645266573755366`,0.699600139366951`],
+StripOnInput -> False],TraditionalForm]],{111.`,-69.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"end\"",FontSize -> Scaled[0.05744925315970892`],FontColor -> RGBColor[
+0.47401116530937026`,0.47809330081437784`,0.85`],StripOnInput -> False],TraditionalForm]],
+{154.`,79.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"actions\"",FontSize -> Scaled[
+0.04059747223286097`],FontColor -> RGBColor[0.3103557220216354`,0.5867154223826917`,
+0.7874268664259625`],StripOnInput -> False],TraditionalForm]],{-58.`,168.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"whatever\"",FontSize -> Scaled[0.03753351206434316`],
+FontColor -> RGBColor[0.969373377466199`,0.6043668873309952`,0.08269188084126262`],
+StripOnInput -> False],TraditionalForm]],{-120.`,169.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"desirable\"",FontSize -> Scaled[0.03906549214860207`],
+FontColor -> RGBColor[0.5019668524892619`,0.46131988850644284`,0.85`],StripOnInput -> False],
+TraditionalForm]],{-142.`,-162.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"thing\"",FontSize -> Scaled[0.04519341248563769`],FontColor -> RGBColor[0.7513196300394465`,
+0.358`,0.48066210763162087`],StripOnInput -> False],TraditionalForm]],{-154.`,-136.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"punishment\"",FontSize -> Scaled[
+0.028341631558789736`],FontColor -> RGBColor[0.2198892179497479`,0.6590886256402017`,
+0.6788670615396974`],StripOnInput -> False],TraditionalForm]],{8.`,177.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"natural\"",FontSize -> Scaled[0.04366143240137878`],
+FontColor -> RGBColor[0.8342400905885153`,0.4628267270590103`,0.0038160815296638794`],
+StripOnInput -> False],TraditionalForm]],{-27.`,-179.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"except\"",FontSize -> Scaled[0.03753351206434316`],FontColor -> RGBColor[
+0.7175796237092107`,0.7261199581899123`,0.`],StripOnInput -> False],TraditionalForm]],
+{164.`,17.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"equally\"",FontSize -> Scaled[
+0.03600153198008426`],FontColor -> RGBColor[0.31827505306025683`,0.715`,0.3808317506505822`],
+StripOnInput -> False],TraditionalForm]],{55.`,-179.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"theory\"",FontSize -> Scaled[0.03600153198008426`],FontColor -> RGBColor[
+0.5750747800184488`,0.4174563783225715`,0.8498130499538777`],StripOnInput -> False],
+TraditionalForm]],{-165.`,0.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"beings\"",FontSize -> Scaled[0.03600153198008426`],FontColor -> RGBColor[0.7277983389807635`,
+0.358`,0.5168487092603637`],StripOnInput -> False],TraditionalForm]],{-164.`,13.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"present\"",FontSize -> Scaled[
+0.031405591727307544`],FontColor -> RGBColor[0.6102054708420535`,0.39696347534213544`,
+0.7619863228948663`],StripOnInput -> False],TraditionalForm]],{37.`,18.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"different\"",FontSize -> Scaled[0.03446955189582536`],
+FontColor -> RGBColor[0.8335801463353031`,0.3487839707329394`,0.3481997561078282`],
+StripOnInput -> False],TraditionalForm]],{-42.`,181.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"possible\"",FontSize -> Scaled[0.03293757181156645`],
+FontColor -> RGBColor[0.4567336004533182`,0.4884598397280091`,0.85`],StripOnInput -> False],
+TraditionalForm]],{56.`,176.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"cases\"",FontSize -> Scaled[0.04366143240137878`],FontColor -> RGBColor[0.2187618985811806`,
+0.715`,0.5074848563512248`],StripOnInput -> False],TraditionalForm]],{-164.`,-13.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"duty\"",FontSize -> Scaled[
+0.04059747223286097`],FontColor -> RGBColor[0.9492067688690977`,0.5394711792460651`,
+0.10728609198218791`],StripOnInput -> False],TraditionalForm]],{163.`,0.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"pain\"",FontSize -> Scaled[0.04519341248563769`],
+FontColor -> RGBColor[0.9784200278733908`,0.649600139366954`,0.058265924741844846`],
+StripOnInput -> False],TraditionalForm]],{-161.`,26.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"just\"",FontSize -> Scaled[0.04519341248563769`],FontColor -> RGBColor[
+0.428777913273419`,0.5052332520359486`,0.85`],StripOnInput -> False],TraditionalForm]],
+{-159.`,40.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"existence\"",
+FontSize -> Scaled[0.03293757181156645`],FontColor -> RGBColor[0.8926354502560807`,
+0.366046824615879`,0.15658862564020168`],StripOnInput -> False],TraditionalForm]],
+{-77.`,-172.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"degree\"",FontSize -> Scaled[
+0.03293757181156645`],FontColor -> RGBColor[0.5788038738141875`,0.715`,0.049249615145579635`],
+StripOnInput -> False],TraditionalForm]],{165.`,28.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"according\"",FontSize -> Scaled[0.02680965147453083`],
+FontColor -> RGBColor[0.9107287510704583`,0.33890687339431275`,0.20182187767614543`],
+StripOnInput -> False],TraditionalForm]],{153.`,-63.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"mind\"",FontSize -> Scaled[0.04059747223286097`],FontColor -> RGBColor[
+0.47929071933511125`,0.715`,0.1759027208462221`],StripOnInput -> False],TraditionalForm]],
+{167.`,-14.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"greater\"",FontSize -> Scaled[
+0.02987361164304864`],FontColor -> RGBColor[0.3383114092015346`,0.5643508726387724`,
+0.8209736910418415`],StripOnInput -> False],TraditionalForm]],{167.`,40.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"desired\"",FontSize -> Scaled[0.03446955189582536`],
+FontColor -> RGBColor[0.9307395679624266`,0.7498043964402695`,0.`],StripOnInput -> False],
+TraditionalForm]],{-159.`,117.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"believe\"",FontSize -> Scaled[0.02987361164304864`],FontColor -> RGBColor[0.7989994773739094`,
+0.735166608597101`,0.`],StripOnInput -> False],TraditionalForm]],{89.`,126.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"morals\"",FontSize -> Scaled[0.031405591727307544`],
+FontColor -> RGBColor[0.15725938678540247`,0.715`,0.5857607804549424`],StripOnInput -> False],
+TraditionalForm]],{163.`,-76.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"fact\"",FontSize -> Scaled[0.04519341248563769`],FontColor -> RGBColor[0.6361597700445392`,
+0.7170733077827265`,0.`],StripOnInput -> False],TraditionalForm]],{-171.`,-58.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"higher\"",FontSize -> Scaled[
+0.02987361164304864`],FontColor -> RGBColor[0.9603267270590103`,0.5591336352950514`,
+0.10711783694067224`],StripOnInput -> False],TraditionalForm]],{-83.`,19.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"state\"",FontSize -> Scaled[0.04212945231711988`],
+FontColor -> RGBColor[0.8493197142977551`,0.7407577460330839`,0.`],StripOnInput -> False],
+TraditionalForm]],{162.`,-88.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"proof\"",FontSize -> Scaled[0.03446955189582536`],FontColor -> RGBColor[0.922066817647527`,
+0.5213778784316846`,0.08286013588277422`],StripOnInput -> False],TraditionalForm]],
+{14.`,-180.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"ultimate\"",
+FontSize -> Scaled[0.028341631558789736`],FontColor -> RGBColor[0.6453361616656581`,
+0.37647057236169945`,0.6741595958358548`],StripOnInput -> False],TraditionalForm]],
+{-85.`,177.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"power\"",FontSize -> Scaled[
+0.031405591727307544`],FontColor -> RGBColor[0.8510135028964549`,0.47400900193096995`,
+0.018912152606809424`],StripOnInput -> False],TraditionalForm]],{-169.`,-73.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"say\"",FontSize -> Scaled[0.03753351206434316`],
+FontColor -> RGBColor[0.38354466123747527`,0.5323732032575149`,0.85`],StripOnInput -> False],
+TraditionalForm]],{-45.`,-30.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"notion\"",FontSize -> Scaled[0.02987361164304864`],FontColor -> RGBColor[0.7042770479220728`,
+0.358`,0.5530353108891188`],StripOnInput -> False],TraditionalForm]],{-169.`,-84.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"rule\"",FontSize -> Scaled[
+0.04366143240137878`],FontColor -> RGBColor[0.596786740995709`,0.404791067752503`,
+0.7955331475107271`],StripOnInput -> False],TraditionalForm]],{171.`,-47.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"called\"",FontSize -> Scaled[0.028341631558789736`],
+FontColor -> RGBColor[0.8633598745697435`,0.40996018814538476`,0.08339968642435877`],
+StripOnInput -> False],TraditionalForm]],{-170.`,-27.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"reason\"",FontSize -> Scaled[0.02987361164304864`],FontColor -> RGBColor[
+0.4177882075393331`,0.715`,0.25417864494993975`],StripOnInput -> False],TraditionalForm]],
+{166.`,94.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"laws\"",FontSize -> Scaled[
+0.03753351206434316`],FontColor -> RGBColor[0.9046334610863751`,0.334573307782725`,
+0.22977756485604156`],StripOnInput -> False],TraditionalForm]],{165.`,-102.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"evil\"",FontSize -> Scaled[0.03753351206434316`],
+FontColor -> RGBColor[0.6319174318193065`,0.38429816477207124`,0.7077064204517338`],
+StripOnInput -> False],TraditionalForm]],{172.`,51.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"point\"",FontSize -> Scaled[0.028341631558789736`],FontColor -> RGBColor[
+0.8064401951137368`,0.3542119609772526`,0.39343300814377197`],StripOnInput -> False],
+TraditionalForm]],{-166.`,-95.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"far\"",FontSize -> Scaled[0.04059747223286097`],FontColor -> RGBColor[0.6897400905885174`,
+0.358`,0.5753998606330502`],StripOnInput -> False],TraditionalForm]],{175.`,-28.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"force\"",FontSize -> Scaled[
+0.031405591727307544`],FontColor -> RGBColor[0.7658565873730018`,0.358`,0.4582975578876895`],
+StripOnInput -> False],TraditionalForm]],{165.`,104.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"time\"",FontSize -> Scaled[0.028341631558789736`],FontColor -> RGBColor[
+0.8949268664259606`,0.5032845776173072`,0.05843417978336459`],StripOnInput -> False],
+TraditionalForm]],{172.`,61.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"word\"",FontSize -> Scaled[0.028341631558789736`],FontColor -> RGBColor[0.6672593867853922`,
+0.7205288207539324`,0.`],StripOnInput -> False],TraditionalForm]],{148.`,-124.`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"like\"",FontSize -> Scaled[
+0.03446955189582536`],FontColor -> RGBColor[0.26512246998569167`,0.6229020240114467`,
+0.73314696398283`],StripOnInput -> False],TraditionalForm]],{89.`,174.`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"kind\"",FontSize -> Scaled[0.028341631558789736`],FontColor -> RGBColor[
+0.529922539669161`,0.44454647619850335`,0.85`],StripOnInput -> False],TraditionalForm]],
+{-150.`,127.`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"act\"",FontSize -> Scaled[
+0.031405591727307544`],FontColor -> RGBColor[0.9840111653093676`,0.677555826546838`,
+0.04316985366470745`],StripOnInput -> False],TraditionalForm]],{-71.`,99.`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"man\"",FontSize -> Scaled[0.028341631558789736`],
+FontColor -> RGBColor[0.9986489531525362`,0.7507447657626809`,0.0036478264881522893`],
+StripOnInput -> False],TraditionalForm]],{-111.`,55.`},Center,Automatic]},{{}},StripOnInput -> False]},
+ImageSize -> Large,PlotRange -> {{-187.5`,185.5`},{-187.5`,187.5`}},DefaultBaseStyle -> {"Graphics",FontFamily -> "Source Sans Pro"},
+Method -> {"DefaultBoundaryStyle" -> Automatic,"DefaultGraphicsInteraction" -> {"Version" -> 1.2`,"TrackMousePosition" -> {True,False},"Effects" -> {"Highlight" -> {"ratio" -> 2},"HighlightPoint" -> {"ratio" -> 2},"Droplines" -> {"freeformCursorMode" -> True,"placement" -> {"x" -> "All","y" -> "None"}}}},"DefaultPlotStyle" -> Automatic}],StyleBox[
+"\"Utilitarianism\"",Bold,14,StripOnInput -> False]},"Labeled",DisplayFunction -> Function[
+GridBox[{{ItemBox[Slot[2],DefaultBaseStyle -> "LabeledLabel"]},{TagBox[ItemBox[PaneBox[
+TagBox[Slot[1],"SkipImageSizeLevel"],Alignment -> {Center,Baseline},BaselinePosition -> Baseline],
+DefaultBaseStyle -> "Labeled"],"SkipImageSizeLevel"]}},GridBoxAlignment -> {"Columns" -> {{Center}},"Rows" -> {{Center}}},
+AutoDelete -> False,GridBoxItemSize -> {"Columns" -> {{Automatic}},"Rows" -> {{Automatic}}},
+BaselinePosition -> {2,1}]],InterpretationFunction -> Function[RowBox[{"Labeled","[",RowBox[
+{Slot[1],",",Slot[2],",","Top",",",RowBox[{"{","}"}]}],"]"}]]]],"Print",CellChangeTimes -> {3.9566000232387047`*^9,3.956600511014791`*^9,3.9566011949456778`*^9,3.956604292374427`*^9},
+CellLabel -> "During evaluation of In[90]:=",ExpressionUUID -> "aac76e9e-23f6-4265-9a90-13e711d21e30"],Cell[
+BoxData[
+TemplateBox[{GraphicsBox[{StyleBox[{InsetBox[BoxData[FormBox[StyleBox["\"government\"",
+FontSize -> Scaled[0.19486432343835366`],FontColor -> RGBColor[0.455`,0.7`,0.21`],
+StripOnInput -> False],TraditionalForm]],{0,0},Center,Automatic],InsetBox[BoxData[
+FormBox[StyleBox["\"state\"",FontSize -> Scaled[0.21671826625386997`],FontColor -> RGBColor[
+0.24`,0.6`,0.8`],StripOnInput -> False],TraditionalForm]],{-0.5`,37.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"work\"",FontSize -> Scaled[0.18029502822800947`],FontColor -> RGBColor[
+0.578`,0.51`,0.85`],StripOnInput -> False],TraditionalForm]],{-0.5`,-46.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"man\"",FontSize -> Scaled[0.18757967583318158`],
+FontColor -> RGBColor[0.922526`,0.385626`,0.209179`],StripOnInput -> False],TraditionalForm]],
+{-0.5`,-79.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"electronic\"",
+FontSize -> Scaled[0.10380622837370243`],FontColor -> RGBColor[0.8`,0.4`,0.76`],StripOnInput -> False],
+TraditionalForm]],{-0.5`,71.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"men\"",FontSize -> Scaled[0.16572573301766527`],FontColor -> RGBColor[0.772079`,
+0.431554`,0.102387`],StripOnInput -> False],TraditionalForm]],{-0.5`,104.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"works\"",FontSize -> Scaled[0.12201784738663268`],
+FontColor -> RGBColor[1.`,0.75`,0.`],StripOnInput -> False],TraditionalForm]],{20.5`,-110.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"foundation\"",FontSize -> Scaled[
+0.08559460936077218`],FontColor -> RGBColor[0.915`,0.3325`,0.2125`],StripOnInput -> False],
+TraditionalForm]],{-0.5`,126.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"agreement\"",FontSize -> Scaled[0.07102531415042798`],FontColor -> RGBColor[0.28026441037696703`,
+0.715`,0.4292089322474965`],StripOnInput -> False],TraditionalForm]],{-107.5`,-55.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"right\"",FontSize -> Scaled[
+0.10380622837370243`],FontColor -> RGBColor[0.637`,0.65`,0.`],StripOnInput -> False],
+TraditionalForm]],{92.5`,-36.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"\[Trademark]\"",FontSize -> Scaled[0.21307594245128395`],FontColor -> RGBColor[
+0.95`,0.627`,0.1425`],StripOnInput -> False],TraditionalForm]],{89.5`,30.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"people\"",FontSize -> Scaled[0.06738299034784193`],
+FontColor -> RGBColor[0.8996399512215667`,0.7463488834690629`,0.`],StripOnInput -> False],
+TraditionalForm]],{-91.5`,-34.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"states\"",FontSize -> Scaled[0.08559460936077218`],FontColor -> RGBColor[0.40082222609352647`,
+0.5220066643438841`,0.85`],StripOnInput -> False],TraditionalForm]],{-105.5`,29.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"terms\"",FontSize -> Scaled[
+0.08559460936077218`],FontColor -> RGBColor[0.9728288904374106`,0.621644452187053`,
+0.07336199581899142`],StripOnInput -> False],TraditionalForm]],{95.5`,-62.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"donations\"",FontSize -> Scaled[0.06009834274266982`],
+FontColor -> RGBColor[0.6753413537738198`,0.3589675436319385`,0.5991466155654507`],
+StripOnInput -> False],TraditionalForm]],{-95.5`,-74.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"trademark\"",FontSize -> Scaled[0.05645601894008377`],
+FontColor -> RGBColor[0.8613800418100862`,0.48092002787339083`,0.02824203762907758`],
+StripOnInput -> False],TraditionalForm]],{-108.5`,54.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"license\"",FontSize -> Scaled[0.06738299034784193`],FontColor -> RGBColor[
+0.5833680111493557`,0.4126186601628758`,0.8290799721266107`],StripOnInput -> False],
+TraditionalForm]],{100.5`,62.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"country\"",FontSize -> Scaled[0.05645601894008377`],FontColor -> RGBColor[0.9874666782805795`,
+0.6948333914028977`,0.033839968642435214`],StripOnInput -> False],TraditionalForm]],
+{102.5`,22.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"know\"",FontSize -> Scaled[
+0.07830996175560008`],FontColor -> RGBColor[0.736782672705901`,0.358`,0.5030266573755369`],
+StripOnInput -> False],TraditionalForm]],{81.5`,-79.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"paragraph\"",FontSize -> Scaled[0.045529047532325624`],
+FontColor -> RGBColor[0.23716678280579248`,0.645266573755366`,0.699600139366951`],
+StripOnInput -> False],TraditionalForm]],{-76.5`,91.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"make\"",FontSize -> Scaled[0.07102531415042798`],FontColor -> RGBColor[
+0.838355547812947`,0.44746667828057946`,0.0208888695323676`],StripOnInput -> False],
+TraditionalForm]],{79.5`,86.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"property\"",FontSize -> Scaled[0.04917137133491168`],FontColor -> RGBColor[0.7132613816472081`,
+0.358`,0.5392132590042952`],StripOnInput -> False],TraditionalForm]],{-97.5`,72.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"literary\"",FontSize -> Scaled[
+0.05281369513749773`],FontColor -> RGBColor[0.8878600487784333`,0.33792799024431336`,
+0.2577332520359445`],StripOnInput -> False],TraditionalForm]],{-57.5`,-108.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"think\"",FontSize -> Scaled[0.06738299034784193`],
+FontColor -> RGBColor[0.8439466852489265`,0.3467106629502147`,0.3309221912517893`],
+StripOnInput -> False],TraditionalForm]],{77.5`,104.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"archive\"",FontSize -> Scaled[0.05281369513749773`],FontColor -> RGBColor[
+0.6184987019729621`,0.39212575718243875`,0.7412532450675947`],StripOnInput -> False],
+TraditionalForm]],{-75.5`,104.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"massachusetts\"",FontSize -> Scaled[0.03460207612456748`],FontColor -> RGBColor[
+0.8335801463353031`,0.3487839707329394`,0.3481997561078282`],StripOnInput -> False],
+TraditionalForm]],{-0.5`,-29.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"united\"",FontSize -> Scaled[0.06009834274266982`],FontColor -> RGBColor[0.47401116530937026`,
+0.47809330081437784`,0.85`],StripOnInput -> False],TraditionalForm]],{-0.5`,-135.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"support\"",FontSize -> Scaled[
+0.045529047532325624`],FontColor -> RGBColor[0.6536293927965667`,0.37163285420200276`,
+0.6534265180085832`],StripOnInput -> False],TraditionalForm]],{-77.5`,-88.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"individual\"",FontSize -> Scaled[
+0.045529047532325624`],FontColor -> RGBColor[0.9810598048862722`,0.7553955338762525`,
+0.`],StripOnInput -> False],TraditionalForm]],{-56.5`,-125.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"slavery\"",FontSize -> Scaled[0.045529047532325624`],
+FontColor -> RGBColor[0.9052934053395919`,0.510195603559728`,0.06776406480563275`],
+StripOnInput -> False],TraditionalForm]],{90.5`,-96.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"say\"",FontSize -> Scaled[0.06374066654525588`],FontColor -> RGBColor[
+0.9324333565611593`,0.5282889043741062`,0.0921900209050434`],StripOnInput -> False],
+TraditionalForm]],{126.5`,39.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"respect\"",FontSize -> Scaled[0.041886723729739575`],FontColor -> RGBColor[0.596786740995709`,
+0.404791067752503`,0.7955331475107271`],StripOnInput -> False],TraditionalForm]],
+{46.5`,-132.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"shall\"",FontSize -> Scaled[
+0.06009834274266982`],FontColor -> RGBColor[0.8857244243136628`,0.3764133635295058`,
+0.1393110607841571`],StripOnInput -> False],TraditionalForm]],{-24.5`,140.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"associated\"",FontSize -> Scaled[
+0.038244399927153526`],FontColor -> RGBColor[0.9492067688690977`,0.5394711792460651`,
+0.10728609198218791`],StripOnInput -> False],TraditionalForm]],{22.5`,142.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"pay\"",FontSize -> Scaled[0.05645601894008377`],
+FontColor -> RGBColor[0.16397784358994957`,0.7038177251280403`,0.6117734123079395`],
+StripOnInput -> False],TraditionalForm]],{83.5`,-106.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"disobedience\"",FontSize -> Scaled[0.030959752321981428`],
+FontColor -> RGBColor[0.3383114092015346`,0.5643508726387724`,0.8209736910418415`],
+StripOnInput -> False],TraditionalForm]],{88.5`,118.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"neighbors\"",FontSize -> Scaled[0.03460207612456748`],
+FontColor -> RGBColor[0.922066817647527`,0.5213778784316846`,0.08286013588277422`],
+StripOnInput -> False],TraditionalForm]],{-51.5`,-137.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"information\"",FontSize -> Scaled[0.03460207612456748`],
+FontColor -> RGBColor[0.5750747800184488`,0.4174563783225715`,0.8498130499538777`],
+StripOnInput -> False],TraditionalForm]],{-0.5`,-149.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"1\"",FontSize -> Scaled[0.14387179020214896`],FontColor -> RGBColor[
+0.4`,0.64`,1.`],StripOnInput -> False],TraditionalForm]],{109.5`,84.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"good\"",FontSize -> Scaled[0.04917137133491168`],FontColor -> RGBColor[
+0.9637822400302223`,0.5764112001511111`,0.0977879519184`],StripOnInput -> False],
+TraditionalForm]],{-99.5`,-105.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"copy\"",FontSize -> Scaled[0.04917137133491168`],FontColor -> RGBColor[0.35558897405758294`,
+0.5505288207539337`,0.8417067688690995`],StripOnInput -> False],TraditionalForm]],
+{143.5`,-28.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"including\"",
+FontSize -> Scaled[0.038244399927153526`],FontColor -> RGBColor[0.8745421494417032`,
+0.39318677583744527`,0.11135537360425793`],StripOnInput -> False],TraditionalForm]],
+{-90.5`,119.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"neighbor\"",
+FontSize -> Scaled[0.03460207612456748`],FontColor -> RGBColor[0.26512246998569167`,
+0.6229020240114467`,0.73314696398283`],StripOnInput -> False],TraditionalForm]],{15.5`,153.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"distributing\"",FontSize -> Scaled[
+0.030959752321981428`],FontColor -> RGBColor[0.9603267270590103`,0.5591336352950514`,
+0.10711783694067224`],StripOnInput -> False],TraditionalForm]],{85.5`,128.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"money\"",FontSize -> Scaled[0.041886723729739575`],
+FontColor -> RGBColor[0.2187618985811806`,0.715`,0.5074848563512248`],StripOnInput -> False],
+TraditionalForm]],{88.5`,-123.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"standing\"",FontSize -> Scaled[0.03460207612456748`],FontColor -> RGBColor[0.5788038738141875`,
+0.715`,0.049249615145579635`],StripOnInput -> False],TraditionalForm]],{-124.5`,-88.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"agree\"",FontSize -> Scaled[
+0.041886723729739575`],FontColor -> RGBColor[0.9038177251280404`,0.3492734123079395`,
+0.18454431282010084`],StripOnInput -> False],TraditionalForm]],{143.5`,-43.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"conscience\"",FontSize -> Scaled[
+0.030959752321981428`],FontColor -> RGBColor[0.7989994773739094`,0.735166608597101`,
+0.`],StripOnInput -> False],TraditionalForm]],{135.5`,47.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"majority\"",FontSize -> Scaled[0.038244399927153526`],
+FontColor -> RGBColor[0.9930578157165594`,0.7227890785827968`,0.01874389756528967`],
+StripOnInput -> False],TraditionalForm]],{133.5`,-79.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"law\"",FontSize -> Scaled[0.06009834274266982`],FontColor -> RGBColor[
+0.5407932311309059`,0.715`,0.09762679674248334`],StripOnInput -> False],TraditionalForm]],
+{-125.5`,84.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"laws\"",FontSize -> Scaled[
+0.05645601894008377`],FontColor -> RGBColor[0.7748409210981391`,0.358`,0.4444755060028629`],
+StripOnInput -> False],TraditionalForm]],{44.5`,-146.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"allegiance\"",FontSize -> Scaled[0.030959752321981428`],
+FontColor -> RGBColor[0.9840111653093676`,0.677555826546838`,0.04316985366470745`],
+StripOnInput -> False],TraditionalForm]],{136.5`,78.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"provide\"",FontSize -> Scaled[0.03460207612456748`],FontColor -> RGBColor[
+0.6670481226429111`,0.3638052617916352`,0.6198796933927223`],StripOnInput -> False],
+TraditionalForm]],{69.5`,138.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"use\"",FontSize -> Scaled[0.06738299034784193`],FontColor -> RGBColor[0.28240003484173815`,
+0.6090799721266095`,0.7538800418100857`],StripOnInput -> False],TraditionalForm]],
+{144.5`,-58.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"refund\"",
+FontSize -> Scaled[0.041886723729739575`],FontColor -> RGBColor[0.8342400905885153`,
+0.4628267270590103`,0.0038160815296638794`],StripOnInput -> False],TraditionalForm]],
+{-141.5`,-43.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"authority\"",
+FontSize -> Scaled[0.030959752321981428`],FontColor -> RGBColor[0.15725938678540247`,
+0.715`,0.5857607804549424`],StripOnInput -> False],TraditionalForm]],{-65.5`,142.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"time\"",FontSize -> Scaled[
+0.04917137133491168`],FontColor -> RGBColor[0.8564488486273256`,0.42032672705901153`,
+0.06612212156831418`],StripOnInput -> False],TraditionalForm]],{-81.5`,131.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"american\"",FontSize -> Scaled[0.030959752321981428`],
+FontColor -> RGBColor[0.7658565873730018`,0.358`,0.4582975578876895`],StripOnInput -> False],
+TraditionalForm]],{-28.5`,153.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"person\"",FontSize -> Scaled[0.038244399927153526`],FontColor -> RGBColor[0.19193353076984873`,
+0.681453175384121`,0.6453202369238185`],StripOnInput -> False],TraditionalForm]],
+{-48.5`,-149.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"access\"",
+FontSize -> Scaled[0.041886723729739575`],FontColor -> RGBColor[0.6361597700445392`,
+0.7170733077827265`,0.`],StripOnInput -> False],TraditionalForm]],{-121.5`,101.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"provided\"",FontSize -> Scaled[
+0.030959752321981428`],FontColor -> RGBColor[0.6672593867853922`,0.7205288207539324`,
+0.`],StripOnInput -> False],TraditionalForm]],{119.5`,106.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"things\"",FontSize -> Scaled[0.03460207612456748`],FontColor -> RGBColor[
+0.8926354502560807`,0.366046824615879`,0.15658862564020168`],StripOnInput -> False],
+TraditionalForm]],{-141.5`,67.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"better\"",FontSize -> Scaled[0.038244399927153526`],FontColor -> RGBColor[0.6897400905885174`,
+0.358`,0.5753998606330502`],StripOnInput -> False],TraditionalForm]],{130.5`,88.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"present\"",FontSize -> Scaled[
+0.030959752321981428`],FontColor -> RGBColor[0.6453361616656581`,0.37647057236169945`,
+0.6741595958358548`],StripOnInput -> False],TraditionalForm]],{129.5`,-92.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"world\"",FontSize -> Scaled[0.038244399927153526`],
+FontColor -> RGBColor[0.7175796237092107`,0.7261199581899123`,0.`],StripOnInput -> False],
+TraditionalForm]],{113.5`,-111.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"let\"",FontSize -> Scaled[0.05281369513749773`],FontColor -> RGBColor[0.7678998606330495`,
+0.7317110956258943`,0.`],StripOnInput -> False],TraditionalForm]],{140.5`,59.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"way\"",FontSize -> Scaled[
+0.041886723729739575`],FontColor -> RGBColor[0.3103557220216354`,0.5867154223826917`,
+0.7874268664259625`],StripOnInput -> False],TraditionalForm]],{79.5`,-133.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"long\"",FontSize -> Scaled[0.041886723729739575`],
+FontColor -> RGBColor[0.7513196300394465`,0.358`,0.48066210763162087`],StripOnInput -> False],
+TraditionalForm]],{-102.5`,-123.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"located\"",FontSize -> Scaled[0.030959752321981428`],FontColor -> RGBColor[0.9986489531525362`,
+0.7507447657626809`,0.0036478264881522893`],StripOnInput -> False],TraditionalForm]],
+{54.5`,152.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"ebooks\"",FontSize -> Scaled[
+0.030959752321981428`],FontColor -> RGBColor[0.7042770479220728`,0.358`,0.5530353108891188`],
+StripOnInput -> False],TraditionalForm]],{-65.5`,152.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"great\"",FontSize -> Scaled[0.03460207612456748`],FontColor -> RGBColor[
+0.845266573755366`,0.437100139366951`,0.03816643438841502`],StripOnInput -> False],
+TraditionalForm]],{-90.5`,-138.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"free\"",FontSize -> Scaled[0.045529047532325624`],FontColor -> RGBColor[0.5472001045252132`,
+0.43417993728487203`,0.85`],StripOnInput -> False],TraditionalForm]],{-146.5`,41.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"paid\"",FontSize -> Scaled[
+0.038244399927153526`],FontColor -> RGBColor[0.7896667828057927`,0.3575666434388414`,
+0.4213886953236787`],StripOnInput -> False],TraditionalForm]],{-130.5`,-99.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"duty\"",FontSize -> Scaled[0.038244399927153526`],
+FontColor -> RGBColor[0.47929071933511125`,0.715`,0.1759027208462221`],StripOnInput -> False],
+TraditionalForm]],{75.5`,-147.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"limited\"",FontSize -> Scaled[0.030959752321981428`],FontColor -> RGBColor[0.529922539669161`,
+0.44454647619850335`,0.85`],StripOnInput -> False],TraditionalForm]],{-131.5`,109.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"said\"",FontSize -> Scaled[
+0.041886723729739575`],FontColor -> RGBColor[0.8493197142977551`,0.7407577460330839`,
+0.`],StripOnInput -> False],TraditionalForm]],{-78.5`,-149.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"civil\"",FontSize -> Scaled[0.041886723729739575`],FontColor -> RGBColor[
+0.428777913273419`,0.5052332520359486`,0.85`],StripOnInput -> False],TraditionalForm]],
+{-129.5`,-112.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"copies\"",
+FontSize -> Scaled[0.030959752321981428`],FontColor -> RGBColor[0.8774935098648088`,
+0.34000129802703827`,0.2750108168919853`],StripOnInput -> False],TraditionalForm]],
+{106.5`,-135.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"public\"",
+FontSize -> Scaled[0.030959752321981428`],FontColor -> RGBColor[0.9107287510704583`,
+0.33890687339431275`,0.20182187767614543`],StripOnInput -> False],TraditionalForm]],
+{-112.5`,129.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"moral\"",
+FontSize -> Scaled[0.030959752321981428`],FontColor -> RGBColor[0.2198892179497479`,
+0.6590886256402017`,0.6788670615396974`],StripOnInput -> False],TraditionalForm]],
+{101.5`,138.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"vote\"",FontSize -> Scaled[
+0.03460207612456748`],FontColor -> RGBColor[0.4567336004533182`,0.4884598397280091`,
+0.85`],StripOnInput -> False],TraditionalForm]],{-48.5`,-30.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"like\"",FontSize -> Scaled[0.045529047532325624`],FontColor -> RGBColor[
+0.8168067340273636`,0.3521386531945273`,0.3761554432877274`],StripOnInput -> False],
+TraditionalForm]],{83.5`,151.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"forth\"",FontSize -> Scaled[0.03460207612456748`],FontColor -> RGBColor[0.31827505306025683`,
+0.715`,0.3808317506505822`],StripOnInput -> False],TraditionalForm]],{122.5`,-122.5`},
+Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"force\"",FontSize -> Scaled[
+0.03460207612456748`],FontColor -> RGBColor[0.7277983389807635`,0.358`,0.5168487092603637`],
+StripOnInput -> False],TraditionalForm]],{-99.5`,143.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"certain\"",FontSize -> Scaled[0.030959752321981428`],
+FontColor -> RGBColor[0.8510135028964549`,0.47400900193096995`,0.018912152606809424`],
+StripOnInput -> False],TraditionalForm]],{144.5`,-101.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"tax\"",FontSize -> Scaled[0.04917137133491168`],FontColor -> RGBColor[
+0.37977756485605163`,0.715`,0.3025558265468435`],StripOnInput -> False],TraditionalForm]],
+{-114.5`,-133.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"makes\"",
+FontSize -> Scaled[0.030959752321981428`],FontColor -> RGBColor[0.8064401951137368`,
+0.3542119609772526`,0.39343300814377197`],StripOnInput -> False],TraditionalForm]],
+{133.5`,117.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"wish\"",FontSize -> Scaled[
+0.038244399927153526`],FontColor -> RGBColor[0.6319174318193065`,0.38429816477207124`,
+0.7077064204517338`],StripOnInput -> False],TraditionalForm]],{125.5`,127.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"live\"",FontSize -> Scaled[0.041886723729739575`],
+FontColor -> RGBColor[0.9784200278733908`,0.649600139366954`,0.058265924741844846`],
+StripOnInput -> False],TraditionalForm]],{150.5`,25.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"jail\"",FontSize -> Scaled[0.038244399927153526`],FontColor -> RGBColor[
+0.5019668524892619`,0.46131988850644284`,0.85`],StripOnInput -> False],TraditionalForm]],
+{-149.5`,16.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"help\"",FontSize -> Scaled[
+0.030959752321981428`],FontColor -> RGBColor[0.4177882075393331`,0.715`,0.25417864494993975`],
+StripOnInput -> False],TraditionalForm]],{-149.5`,-76.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"soon\"",FontSize -> Scaled[0.038244399927153526`],FontColor -> RGBColor[
+0.8781534541180211`,0.4921023027453475`,0.04333810870621905`],StripOnInput -> False],
+TraditionalForm]],{102.5`,-146.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"just\"",FontSize -> Scaled[0.030959752321981428`],FontColor -> RGBColor[0.8633598745697435`,
+0.40996018814538476`,0.08339968642435877`],StripOnInput -> False],TraditionalForm]],
+{-149.5`,79.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"case\"",FontSize -> Scaled[
+0.03460207612456748`],FontColor -> RGBColor[0.9046334610863751`,0.334573307782725`,
+0.22977756485604156`],StripOnInput -> False],TraditionalForm]],{-83.5`,39.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"fee\"",FontSize -> Scaled[0.03460207612456748`],
+FontColor -> RGBColor[0.969373377466199`,0.6043668873309952`,0.08269188084126262`],
+StripOnInput -> False],TraditionalForm]],{-150.5`,26.5`},Center,Automatic],InsetBox[
+BoxData[FormBox[StyleBox["\"evil\"",FontSize -> Scaled[0.03460207612456748`],FontColor -> RGBColor[
+0.38354466123747527`,0.5323732032575149`,0.85`],StripOnInput -> False],TraditionalForm]],
+{-151.5`,90.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"set\"",FontSize -> Scaled[
+0.041886723729739575`],FontColor -> RGBColor[0.8607200975568693`,0.34335598048862614`,
+0.30296650407188447`],StripOnInput -> False],TraditionalForm]],{-91.5`,154.5`},Center,
+Automatic],InsetBox[BoxData[FormBox[StyleBox["\"life\"",FontSize -> Scaled[0.03460207612456748`],
+FontColor -> RGBColor[0.9307395679624266`,0.7498043964402695`,0.`],StripOnInput -> False],
+TraditionalForm]],{148.5`,98.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox[
+"\"come\"",FontSize -> Scaled[0.030959752321981428`],FontColor -> RGBColor[0.6102054708420535`,
+0.39696347534213544`,0.7619863228948663`],StripOnInput -> False],TraditionalForm]],
+{141.5`,-110.5`},Center,Automatic],InsetBox[BoxData[FormBox[StyleBox["\"new\"",FontSize -> Scaled[
+0.030959752321981428`],FontColor -> RGBColor[0.8949268664259606`,0.5032845776173072`,
+0.05843417978336459`],StripOnInput -> False],TraditionalForm]],{-102.5`,-148.5`},
+Center,Automatic]},{{}},StripOnInput -> False]},ImageSize -> Large,PlotRange -> {{-162.`,161.`},{-157.`,161.`}},
+DefaultBaseStyle -> {"Graphics",FontFamily -> "Source Sans Pro"},Method -> {"DefaultBoundaryStyle" -> Automatic,"DefaultGraphicsInteraction" -> {"Version" -> 1.2`,"TrackMousePosition" -> {True,False},"Effects" -> {"Highlight" -> {"ratio" -> 2},"HighlightPoint" -> {"ratio" -> 2},"Droplines" -> {"freeformCursorMode" -> True,"placement" -> {"x" -> "All","y" -> "None"}}}},"DefaultPlotStyle" -> Automatic}],StyleBox[
+"\"Civil Disobedience\"",Bold,14,StripOnInput -> False]},"Labeled",DisplayFunction -> Function[
+GridBox[{{ItemBox[Slot[2],DefaultBaseStyle -> "LabeledLabel"]},{TagBox[ItemBox[PaneBox[
+TagBox[Slot[1],"SkipImageSizeLevel"],Alignment -> {Center,Baseline},BaselinePosition -> Baseline],
+DefaultBaseStyle -> "Labeled"],"SkipImageSizeLevel"]}},GridBoxAlignment -> {"Columns" -> {{Center}},"Rows" -> {{Center}}},
+AutoDelete -> False,GridBoxItemSize -> {"Columns" -> {{Automatic}},"Rows" -> {{Automatic}}},
+BaselinePosition -> {2,1}]],InterpretationFunction -> Function[RowBox[{"Labeled","[",RowBox[
+{Slot[1],",",Slot[2],",","Top",",",RowBox[{"{","}"}]}],"]"}]]]],"Print",CellChangeTimes -> {3.9566000232387047`*^9,3.956600511014791`*^9,3.9566011949456778`*^9,3.956604297067012`*^9},
+CellLabel -> "During evaluation of In[90]:=",ExpressionUUID -> "97679121-6c1d-4beb-9330-d15a159144b4"]},
+Open],ExpressionUUID -> "e5a1ba71-3ee1-4062-980d-5e83d47d38e6"],Cell[
+BoxData[TagBox[
+GridBox[{{GraphicsBox[{{},{TagBox[{RGBColor[0.24`,0.6`,0.8`],PointSize[Large],AbsoluteThickness[
+2],PointBox[{{201.35537280664227`,10.593125536657373`},{-54.80144285134792`,84.31482864568294`},{-42.46398628663131`,33.5322725507557`},{-31.500562031711645`,-154.08939761843922`},{-34.62848575095578`,9.383107074569525`},{-37.96089588599027`,16.26606381077359`}}]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#1"]]],{TagBox[{Opacity[0.`],PointBox[
+{{201.35537280664227`,10.593125536657373`}}]},Function[Annotation[Slot[1],{{Callout},Charting`Private`Tag,{1}}]]],TagBox[
+{Opacity[0.`],PointBox[{{-54.80144285134792`,84.31482864568294`}}]},Function[Annotation[
+Slot[1],{{Callout},Charting`Private`Tag,{2}}]]],TagBox[{Opacity[0.`],PointBox[{{-42.46398628663131`,33.5322725507557`}}]},
+Function[Annotation[Slot[1],{{Callout},Charting`Private`Tag,{3}}]]],TagBox[{Opacity[
+0.`],PointBox[{{-31.500562031711645`,-154.08939761843922`}}]},Function[Annotation[
+Slot[1],{{Callout},Charting`Private`Tag,{4}}]]],TagBox[{Opacity[0.`],PointBox[{{-34.62848575095578`,9.383107074569525`}}]},
+Function[Annotation[Slot[1],{{Callout},Charting`Private`Tag,{5}}]]],TagBox[{Opacity[
+0.`],PointBox[{{-37.96089588599027`,16.26606381077359`}}]},Function[Annotation[Slot[
+1],{{Callout},Charting`Private`Tag,{6}}]]]}},{{{{},{GraphicsGroupBox[{{GrayLevel[
+1],AbsoluteThickness[4],Opacity[NCache[Rational[2,3],0.6666666666666666`]],CapForm[
+"Butt"],JoinForm["Round"],BSplineCurveBox[{Offset[{2.121320343559643`,2.1213203435596424`},
+{-37.55103599428002`,18.30026493326784`}],Offset[{5.656854249492381`,5.65685424949238`},
+{-37.55103599428002`,18.30026493326784`}],Offset[{7.65685424949238`,5.65685424949238`},
+{-37.55103599428002`,18.30026493326784`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-37.55103599428002`,18.30026493326784`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-37.55103599428002`,18.30026493326784`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],BSplineCurveBox[{Offset[{2.121320343559643`,2.1213203435596424`},
+{-37.55103599428002`,18.30026493326784`}],Offset[{5.656854249492381`,5.65685424949238`},
+{-37.55103599428002`,18.30026493326784`}],Offset[{7.65685424949238`,5.65685424949238`},
+{-37.55103599428002`,18.30026493326784`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-37.55103599428002`,18.30026493326784`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-37.55103599428002`,18.30026493326784`}]}]},{EdgeForm[None],FaceForm[{GrayLevel[
+1],Opacity[NCache[Rational[2,3],0.6666666666666666`]]}],PolygonBox[{Offset[{104.65685424949238`,15.25685424949239`},
+{-37.55103599428002`,18.30026493326784`}],Offset[{104.65685424949238`,-0.74314575050761`},
+{-37.55103599428002`,18.30026493326784`}],Offset[{9.656854249492383`,-0.7431457505076313`},
+{-37.55103599428002`,18.30026493326784`}],Offset[{9.656854249492383`,15.256854249492369`},
+{-37.55103599428002`,18.30026493326784`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],EdgeForm[None]},{},InsetBox[StyleBox[
+RotationBox["\"Civil Disobedience\"",BoxRotation -> 0.`],StripOnInput -> False,LineOpacity -> 1,
+FrontFaceOpacity -> 1,BackFaceOpacity -> 1,Opacity -> 1,FontOpacity -> 1],Offset[
+{57.15685424949238`,7.256854249492379`},{-37.55103599428002`,18.30026493326784`}],
+NCache[ImageScaled[{Rational[1,2],Rational[1,2]}],ImageScaled[{0.5`,0.5`}]]]}],GraphicsGroupBox[
+{{GrayLevel[1],AbsoluteThickness[4],Opacity[NCache[Rational[2,3],0.6666666666666666`]],CapForm[
+"Butt"],JoinForm["Round"],BSplineCurveBox[{Offset[{3.`,0.`},{-34.048856333426386`,9.383107074569525`}],Offset[
+{8.`,0.`},{-34.048856333426386`,9.383107074569525`}],Offset[{10.`,0.`},{-34.048856333426386`,9.383107074569525`}],Offset[
+{12.`,0.`},{-34.048856333426386`,9.383107074569525`}],Offset[{12.`,0.`},{-34.048856333426386`,9.383107074569525`}]}]},{RGBColor[
+0.6666666666666666`,0.6666666666666666`,0.6666666666666666`],AbsoluteThickness[1.25`],BSplineCurveBox[
+{Offset[{3.`,0.`},{-34.048856333426386`,9.383107074569525`}],Offset[{8.`,0.`},{-34.048856333426386`,9.383107074569525`}],Offset[
+{10.`,0.`},{-34.048856333426386`,9.383107074569525`}],Offset[{12.`,0.`},{-34.048856333426386`,9.383107074569525`}],Offset[
+{12.`,0.`},{-34.048856333426386`,9.383107074569525`}]}]},{EdgeForm[None],FaceForm[
+{GrayLevel[1],Opacity[NCache[Rational[2,3],0.6666666666666666`]]}],PolygonBox[{Offset[
+{82.`,6.000000000000008`},{-34.048856333426386`,9.383107074569525`}],Offset[{82.`,-5.999999999999992`},
+{-34.048856333426386`,9.383107074569525`}],Offset[{12.`,-6.000000000000008`},{-34.048856333426386`,9.383107074569525`}],Offset[
+{12.`,5.999999999999992`},{-34.048856333426386`,9.383107074569525`}]}]},{RGBColor[
+0.6666666666666666`,0.6666666666666666`,0.6666666666666666`],AbsoluteThickness[1.25`],EdgeForm[
+None]},{},InsetBox[StyleBox[RotationBox["\"Utilitarianism\"",BoxRotation -> 0.`],
+StripOnInput -> False,LineOpacity -> 1,FrontFaceOpacity -> 1,BackFaceOpacity -> 1,
+Opacity -> 1,FontOpacity -> 1],Offset[{47.`,0.`},{-34.048856333426386`,9.383107074569525`}],
+NCache[ImageScaled[{Rational[1,2],Rational[1,2]}],ImageScaled[{0.5`,0.5`}]]]}],GraphicsGroupBox[
+{{GrayLevel[1],AbsoluteThickness[4],Opacity[NCache[Rational[2,3],0.6666666666666666`]],CapForm[
+"Butt"],JoinForm["Round"],BSplineCurveBox[{Offset[{2.121320343559643`,2.1213203435596424`},
+{-42.05412639492106`,35.566473673249945`}],Offset[{5.656854249492381`,5.65685424949238`},
+{-42.05412639492106`,35.566473673249945`}],Offset[{7.65685424949238`,5.65685424949238`},
+{-42.05412639492106`,35.566473673249945`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-42.05412639492106`,35.566473673249945`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-42.05412639492106`,35.566473673249945`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],BSplineCurveBox[{Offset[{2.121320343559643`,2.1213203435596424`},
+{-42.05412639492106`,35.566473673249945`}],Offset[{5.656854249492381`,5.65685424949238`},
+{-42.05412639492106`,35.566473673249945`}],Offset[{7.65685424949238`,5.65685424949238`},
+{-42.05412639492106`,35.566473673249945`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-42.05412639492106`,35.566473673249945`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-42.05412639492106`,35.566473673249945`}]}]},{EdgeForm[None],FaceForm[{GrayLevel[
+1],Opacity[NCache[Rational[2,3],0.6666666666666666`]]}],PolygonBox[{Offset[{66.65685424949238`,15.256854249492386`},
+{-42.05412639492106`,35.566473673249945`}],Offset[{66.65685424949238`,-0.7431457505076144`},
+{-42.05412639492106`,35.566473673249945`}],Offset[{9.656854249492383`,-0.7431457505076278`},
+{-42.05412639492106`,35.566473673249945`}],Offset[{9.656854249492383`,15.256854249492374`},
+{-42.05412639492106`,35.566473673249945`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],EdgeForm[None]},{},InsetBox[StyleBox[
+RotationBox["\"The Prince\"",BoxRotation -> 0.`],StripOnInput -> False,LineOpacity -> 1,
+FrontFaceOpacity -> 1,BackFaceOpacity -> 1,Opacity -> 1,FontOpacity -> 1],Offset[
+{38.15685424949238`,7.256854249492379`},{-42.05412639492106`,35.566473673249945`}],
+NCache[ImageScaled[{Rational[1,2],Rational[1,2]}],ImageScaled[{0.5`,0.5`}]]]}],GraphicsGroupBox[
+{{GrayLevel[1],AbsoluteThickness[4],Opacity[NCache[Rational[2,3],0.6666666666666666`]],CapForm[
+"Butt"],JoinForm["Round"],BSplineCurveBox[{Offset[{2.121320343559643`,2.1213203435596424`},
+{-54.391582959637674`,86.34902976817719`}],Offset[{5.656854249492381`,5.65685424949238`},
+{-54.391582959637674`,86.34902976817719`}],Offset[{7.65685424949238`,5.65685424949238`},
+{-54.391582959637674`,86.34902976817719`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-54.391582959637674`,86.34902976817719`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-54.391582959637674`,86.34902976817719`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],BSplineCurveBox[{Offset[{2.121320343559643`,2.1213203435596424`},
+{-54.391582959637674`,86.34902976817719`}],Offset[{5.656854249492381`,5.65685424949238`},
+{-54.391582959637674`,86.34902976817719`}],Offset[{7.65685424949238`,5.65685424949238`},
+{-54.391582959637674`,86.34902976817719`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-54.391582959637674`,86.34902976817719`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-54.391582959637674`,86.34902976817719`}]}]},{EdgeForm[None],FaceForm[{GrayLevel[
+1],Opacity[NCache[Rational[2,3],0.6666666666666666`]]}],PolygonBox[{Offset[{85.65685424949238`,15.256854249492388`},
+{-54.391582959637674`,86.34902976817719`}],Offset[{85.65685424949238`,-0.7431457505076118`},
+{-54.391582959637674`,86.34902976817719`}],Offset[{9.656854249492383`,-0.7431457505076295`},
+{-54.391582959637674`,86.34902976817719`}],Offset[{9.656854249492383`,15.25685424949237`},
+{-54.391582959637674`,86.34902976817719`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],EdgeForm[None]},{},InsetBox[StyleBox[
+RotationBox["\"The Art of War\"",BoxRotation -> 0.`],StripOnInput -> False,LineOpacity -> 1,
+FrontFaceOpacity -> 1,BackFaceOpacity -> 1,Opacity -> 1,FontOpacity -> 1],Offset[
+{47.65685424949238`,7.256854249492379`},{-54.391582959637674`,86.34902976817719`}],
+NCache[ImageScaled[{Rational[1,2],Rational[1,2]}],ImageScaled[{0.5`,0.5`}]]]}]}},{}},{}}},
+AspectRatio -> NCache[Power[GoldenRatio,-1],0.6180339887498948`],Axes -> {False,False},
+AxesLabel -> {FormBox[TagBox["\"PCA-1\"",HoldForm],TraditionalForm],FormBox[TagBox[
+"\"PCA-2\"",HoldForm],TraditionalForm]},AxesOrigin -> {-14.227383624290185`,0},DisplayFunction -> Identity,
+Frame -> {{True,True},{True,True}},FrameLabel -> {{None,None},{None,None}},FrameStyle -> Automatic,
+FrameTicks -> {{Automatic,Automatic},{Automatic,Automatic}},GridLines -> {Automatic,Automatic},
+GridLinesStyle -> Directive[GrayLevel[0.4`,0.5`],AbsoluteThickness[1],AbsoluteDashing[
+{1,2}]],ImagePadding -> {{All,All},{All,All}},ImageSize -> {330.`,Automatic},Method -> {"AxisPadding" -> Scaled[
+0.02`],"DefaultBoundaryStyle" -> Automatic,"DefaultGraphicsInteraction" -> {"Version" -> 1.2`,"TrackMousePosition" -> {True,False},"Effects" -> {"Highlight" -> {"ratio" -> 2},"HighlightPoint" -> {"ratio" -> 2},"Droplines" -> {"freeformCursorMode" -> True,"placement" -> {"x" -> "All","y" -> "None"}}}},"DefaultMeshStyle" -> AbsolutePointSize[
+6],"DefaultPlotStyle" -> {Directive[RGBColor[0.24`,0.6`,0.8`],AbsoluteThickness[2]],Directive[
+RGBColor[0.95`,0.627`,0.1425`],AbsoluteThickness[2]],Directive[RGBColor[0.455`,0.7`,
+0.21`],AbsoluteThickness[2]],Directive[RGBColor[0.922526`,0.385626`,0.209179`],AbsoluteThickness[
+2]],Directive[RGBColor[0.578`,0.51`,0.85`],AbsoluteThickness[2]],Directive[RGBColor[
+0.772079`,0.431554`,0.102387`],AbsoluteThickness[2]],Directive[RGBColor[0.4`,0.64`,
+1.`],AbsoluteThickness[2]],Directive[RGBColor[1.`,0.75`,0.`],AbsoluteThickness[2]],Directive[
+RGBColor[0.8`,0.4`,0.76`],AbsoluteThickness[2]],Directive[RGBColor[0.637`,0.65`,0.`],
+AbsoluteThickness[2]],Directive[RGBColor[0.915`,0.3325`,0.2125`],AbsoluteThickness[
+2]],Directive[RGBColor[0.40082222609352647`,0.5220066643438841`,0.85`],AbsoluteThickness[
+2]],Directive[RGBColor[0.9728288904374106`,0.621644452187053`,0.07336199581899142`],
+AbsoluteThickness[2]],Directive[RGBColor[0.736782672705901`,0.358`,0.5030266573755369`],
+AbsoluteThickness[2]],Directive[RGBColor[0.28026441037696703`,0.715`,0.4292089322474965`],
+AbsoluteThickness[2]]},"DomainPadding" -> Scaled[0.02`],"PointSizeFunction" -> "SmallPointSize","RangePadding" -> Scaled[
+0.05`],"OptimizePlotMarkers" -> True,"IncludeHighlighting" -> "CurrentPoint","HighlightStyle" -> Automatic,"OptimizePlotMarkers" -> True,"CoordinatesToolOptions" -> {"DisplayFunction" -> Function[
+{Function[Identity[Slot[1]]][Part[Slot[1],1]],Function[Identity[Slot[1]]][Part[Slot[
+1],2]]}],"CopiedValueFunction" -> Function[{Function[Identity[Slot[1]]][Part[Slot[
+1],1]],Function[Identity[Slot[1]]][Part[Slot[1],2]]}]}},PlotLabel -> FormBox["\"Document Embedding via PCA\"",
+TraditionalForm],PlotRange -> {{-54.80144285134792`,-15.055425649332147`},{-26.840641139709746`,84.31482864568294`}},
+PlotRangePadding -> {{Scaled[0.02`],Scaled[0.08`]},{Scaled[0.05`],Scaled[0.12944271909999158`]}},
+Ticks -> {Automatic,Automatic}]},{GraphicsBox[{{},{TagBox[{RGBColor[0.24`,0.6`,0.8`],PointSize[
+Large],AbsoluteThickness[2],PointBox[{{6.963671314002293`,-20.616786688740177`},{25.062765693203367`,9.688547316390226`},{16.76767076231535`,17.551315864745664`},{28.738207331892347`,0.8630526998424473`},{2.648973921913367`,-9.577322890643181`},{-3.2452159150196236`,-4.510124562561704`}}]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#1"]]],{TagBox[{Opacity[0.`],PointBox[
+{{6.963671314002293`,-20.616786688740177`}}]},Function[Annotation[Slot[1],{{Callout},Charting`Private`Tag,{1}}]]],TagBox[
+{Opacity[0.`],PointBox[{{25.062765693203367`,9.688547316390226`}}]},Function[Annotation[
+Slot[1],{{Callout},Charting`Private`Tag,{2}}]]],TagBox[{Opacity[0.`],PointBox[{{16.76767076231535`,17.551315864745664`}}]},
+Function[Annotation[Slot[1],{{Callout},Charting`Private`Tag,{3}}]]],TagBox[{Opacity[
+0.`],PointBox[{{28.738207331892347`,0.8630526998424473`}}]},Function[Annotation[Slot[
+1],{{Callout},Charting`Private`Tag,{4}}]]],TagBox[{Opacity[0.`],PointBox[{{2.648973921913367`,-9.577322890643181`}}]},
+Function[Annotation[Slot[1],{{Callout},Charting`Private`Tag,{5}}]]],TagBox[{Opacity[
+0.`],PointBox[{{-3.2452159150196236`,-4.510124562561704`}}]},Function[Annotation[
+Slot[1],{{Callout},Charting`Private`Tag,{6}}]]]}},{{{{},{GraphicsGroupBox[{{GrayLevel[
+1],AbsoluteThickness[4],Opacity[NCache[Rational[2,3],0.6666666666666666`]],CapForm[
+"Butt"],JoinForm["Round"],BSplineCurveBox[{Offset[{2.121320343559643`,2.1213203435596424`},
+{-2.9154036895109643`,-3.8116290480568518`}],Offset[{5.656854249492381`,5.65685424949238`},
+{-2.9154036895109643`,-3.8116290480568518`}],Offset[{7.65685424949238`,5.65685424949238`},
+{-2.9154036895109643`,-3.8116290480568518`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-2.9154036895109643`,-3.8116290480568518`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-2.9154036895109643`,-3.8116290480568518`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],BSplineCurveBox[{Offset[{2.121320343559643`,2.1213203435596424`},
+{-2.9154036895109643`,-3.8116290480568518`}],Offset[{5.656854249492381`,5.65685424949238`},
+{-2.9154036895109643`,-3.8116290480568518`}],Offset[{7.65685424949238`,5.65685424949238`},
+{-2.9154036895109643`,-3.8116290480568518`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-2.9154036895109643`,-3.8116290480568518`}],Offset[{9.65685424949238`,5.65685424949238`},
+{-2.9154036895109643`,-3.8116290480568518`}]}]},{EdgeForm[None],FaceForm[{GrayLevel[
+1],Opacity[NCache[Rational[2,3],0.6666666666666666`]]}],PolygonBox[{Offset[{104.65685424949238`,15.25685424949239`},
+{-2.9154036895109643`,-3.8116290480568518`}],Offset[{104.65685424949238`,-0.74314575050761`},
+{-2.9154036895109643`,-3.8116290480568518`}],Offset[{9.656854249492383`,-0.7431457505076313`},
+{-2.9154036895109643`,-3.8116290480568518`}],Offset[{9.656854249492383`,15.256854249492369`},
+{-2.9154036895109643`,-3.8116290480568518`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],EdgeForm[None]},{},InsetBox[StyleBox[
+RotationBox["\"Civil Disobedience\"",BoxRotation -> 0.`],StripOnInput -> False,LineOpacity -> 1,
+FrontFaceOpacity -> 1,BackFaceOpacity -> 1,Opacity -> 1,FontOpacity -> 1],Offset[
+{57.15685424949238`,7.256854249492379`},{-2.9154036895109643`,-3.8116290480568518`}],
+NCache[ImageScaled[{Rational[1,2],Rational[1,2]}],ImageScaled[{0.5`,0.5`}]]]}],GraphicsGroupBox[
+{{GrayLevel[1],AbsoluteThickness[4],Opacity[NCache[Rational[2,3],0.6666666666666666`]],CapForm[
+"Butt"],JoinForm["Round"],BSplineCurveBox[{Offset[{2.121320343559642`,-2.121320343559643`},
+{2.978786147422026`,-10.275818405148033`}],Offset[{5.656854249492379`,-5.6568542494923815`},
+{2.978786147422026`,-10.275818405148033`}],Offset[{7.65685424949238`,-5.6568542494923815`},
+{2.978786147422026`,-10.275818405148033`}],Offset[{9.65685424949238`,-5.6568542494923815`},
+{2.978786147422026`,-10.275818405148033`}],Offset[{9.65685424949238`,-5.6568542494923815`},
+{2.978786147422026`,-10.275818405148033`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],BSplineCurveBox[{Offset[{2.121320343559642`,-2.121320343559643`},
+{2.978786147422026`,-10.275818405148033`}],Offset[{5.656854249492379`,-5.6568542494923815`},
+{2.978786147422026`,-10.275818405148033`}],Offset[{7.65685424949238`,-5.6568542494923815`},
+{2.978786147422026`,-10.275818405148033`}],Offset[{9.65685424949238`,-5.6568542494923815`},
+{2.978786147422026`,-10.275818405148033`}],Offset[{9.65685424949238`,-5.6568542494923815`},
+{2.978786147422026`,-10.275818405148033`}]}]},{EdgeForm[None],FaceForm[{GrayLevel[
+1],Opacity[NCache[Rational[2,3],0.6666666666666666`]]}],PolygonBox[{Offset[{79.65685424949238`,-0.8568542494923728`},
+{2.978786147422026`,-10.275818405148033`}],Offset[{79.65685424949238`,-12.856854249492372`},
+{2.978786147422026`,-10.275818405148033`}],Offset[{9.656854249492383`,-12.85685424949239`},
+{2.978786147422026`,-10.275818405148033`}],Offset[{9.656854249492383`,-0.8568542494923888`},
+{2.978786147422026`,-10.275818405148033`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],EdgeForm[None]},{},InsetBox[StyleBox[
+RotationBox["\"Utilitarianism\"",BoxRotation -> 0.`],StripOnInput -> False,LineOpacity -> 1,
+FrontFaceOpacity -> 1,BackFaceOpacity -> 1,Opacity -> 1,FontOpacity -> 1],Offset[
+{44.65685424949238`,-6.856854249492381`},{2.978786147422026`,-10.275818405148033`}],
+NCache[ImageScaled[{Rational[1,2],Rational[1,2]}],ImageScaled[{0.5`,0.5`}]]]}],GraphicsGroupBox[
+{{GrayLevel[1],AbsoluteThickness[4],Opacity[NCache[Rational[2,3],0.6666666666666666`]],CapForm[
+"Butt"],JoinForm["Round"],BSplineCurveBox[{Offset[{-2.1213203435596424`,2.121320343559643`},
+{28.40839510638369`,1.5615482143472998`}],Offset[{-5.65685424949238`,5.656854249492381`},
+{28.40839510638369`,1.5615482143472998`}],Offset[{-7.65685424949238`,5.656854249492381`},
+{28.40839510638369`,1.5615482143472998`}],Offset[{-9.65685424949238`,5.656854249492381`},
+{28.40839510638369`,1.5615482143472998`}],Offset[{-9.65685424949238`,5.656854249492381`},
+{28.40839510638369`,1.5615482143472998`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],BSplineCurveBox[{Offset[{-2.1213203435596424`,2.121320343559643`},
+{28.40839510638369`,1.5615482143472998`}],Offset[{-5.65685424949238`,5.656854249492381`},
+{28.40839510638369`,1.5615482143472998`}],Offset[{-7.65685424949238`,5.656854249492381`},
+{28.40839510638369`,1.5615482143472998`}],Offset[{-9.65685424949238`,5.656854249492381`},
+{28.40839510638369`,1.5615482143472998`}],Offset[{-9.65685424949238`,5.656854249492381`},
+{28.40839510638369`,1.5615482143472998`}]}]},{EdgeForm[None],FaceForm[{GrayLevel[
+1],Opacity[NCache[Rational[2,3],0.6666666666666666`]]}],PolygonBox[{Offset[{-9.65685424949238`,15.256854249492385`},
+{28.40839510638369`,1.5615482143472998`}],Offset[{-9.65685424949238`,-0.7431457505076153`},
+{28.40839510638369`,1.5615482143472998`}],Offset[{-51.65685424949238`,-0.7431457505076251`},
+{28.40839510638369`,1.5615482143472998`}],Offset[{-51.65685424949238`,15.256854249492376`},
+{28.40839510638369`,1.5615482143472998`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],EdgeForm[None]},{},InsetBox[StyleBox[
+RotationBox["\"On War\"",BoxRotation -> 0.`],StripOnInput -> False,LineOpacity -> 1,
+FrontFaceOpacity -> 1,BackFaceOpacity -> 1,Opacity -> 1,FontOpacity -> 1],Offset[
+{-30.65685424949238`,7.25685424949238`},{28.40839510638369`,1.5615482143472998`}],
+NCache[ImageScaled[{Rational[1,2],Rational[1,2]}],ImageScaled[{0.5`,0.5`}]]]}],GraphicsGroupBox[
+{{GrayLevel[1],AbsoluteThickness[4],Opacity[NCache[Rational[2,3],0.6666666666666666`]],CapForm[
+"Butt"],JoinForm["Round"],BSplineCurveBox[{Offset[{2.121320343559643`,2.1213203435596424`},
+{17.09748298782401`,18.249811379250517`}],Offset[{5.656854249492381`,5.65685424949238`},
+{17.09748298782401`,18.249811379250517`}],Offset[{7.65685424949238`,5.65685424949238`},
+{17.09748298782401`,18.249811379250517`}],Offset[{9.65685424949238`,5.65685424949238`},
+{17.09748298782401`,18.249811379250517`}],Offset[{9.65685424949238`,5.65685424949238`},
+{17.09748298782401`,18.249811379250517`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],BSplineCurveBox[{Offset[{2.121320343559643`,2.1213203435596424`},
+{17.09748298782401`,18.249811379250517`}],Offset[{5.656854249492381`,5.65685424949238`},
+{17.09748298782401`,18.249811379250517`}],Offset[{7.65685424949238`,5.65685424949238`},
+{17.09748298782401`,18.249811379250517`}],Offset[{9.65685424949238`,5.65685424949238`},
+{17.09748298782401`,18.249811379250517`}],Offset[{9.65685424949238`,5.65685424949238`},
+{17.09748298782401`,18.249811379250517`}]}]},{EdgeForm[None],FaceForm[{GrayLevel[
+1],Opacity[NCache[Rational[2,3],0.6666666666666666`]]}],PolygonBox[{Offset[{66.65685424949238`,15.256854249492386`},
+{17.09748298782401`,18.249811379250517`}],Offset[{66.65685424949238`,-0.7431457505076144`},
+{17.09748298782401`,18.249811379250517`}],Offset[{9.656854249492383`,-0.7431457505076278`},
+{17.09748298782401`,18.249811379250517`}],Offset[{9.656854249492383`,15.256854249492374`},
+{17.09748298782401`,18.249811379250517`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],EdgeForm[None]},{},InsetBox[StyleBox[
+RotationBox["\"The Prince\"",BoxRotation -> 0.`],StripOnInput -> False,LineOpacity -> 1,
+FrontFaceOpacity -> 1,BackFaceOpacity -> 1,Opacity -> 1,FontOpacity -> 1],Offset[
+{38.15685424949238`,7.256854249492379`},{17.09748298782401`,18.249811379250517`}],
+NCache[ImageScaled[{Rational[1,2],Rational[1,2]}],ImageScaled[{0.5`,0.5`}]]]}],GraphicsGroupBox[
+{{GrayLevel[1],AbsoluteThickness[4],Opacity[NCache[Rational[2,3],0.6666666666666666`]],CapForm[
+"Butt"],JoinForm["Round"],BSplineCurveBox[{Offset[{-2.1213203435596424`,2.121320343559643`},
+{24.73295346769471`,10.387042830895078`}],Offset[{-5.65685424949238`,5.656854249492381`},
+{24.73295346769471`,10.387042830895078`}],Offset[{-7.65685424949238`,5.656854249492381`},
+{24.73295346769471`,10.387042830895078`}],Offset[{-9.65685424949238`,5.656854249492381`},
+{24.73295346769471`,10.387042830895078`}],Offset[{-9.65685424949238`,5.656854249492381`},
+{24.73295346769471`,10.387042830895078`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],BSplineCurveBox[{Offset[{-2.1213203435596424`,2.121320343559643`},
+{24.73295346769471`,10.387042830895078`}],Offset[{-5.65685424949238`,5.656854249492381`},
+{24.73295346769471`,10.387042830895078`}],Offset[{-7.65685424949238`,5.656854249492381`},
+{24.73295346769471`,10.387042830895078`}],Offset[{-9.65685424949238`,5.656854249492381`},
+{24.73295346769471`,10.387042830895078`}],Offset[{-9.65685424949238`,5.656854249492381`},
+{24.73295346769471`,10.387042830895078`}]}]},{EdgeForm[None],FaceForm[{GrayLevel[
+1],Opacity[NCache[Rational[2,3],0.6666666666666666`]]}],PolygonBox[{Offset[{-9.656854249492383`,15.256854249492388`},
+{24.73295346769471`,10.387042830895078`}],Offset[{-9.656854249492383`,-0.7431457505076109`},
+{24.73295346769471`,10.387042830895078`}],Offset[{-85.65685424949238`,-0.7431457505076287`},
+{24.73295346769471`,10.387042830895078`}],Offset[{-85.65685424949238`,15.25685424949237`},
+{24.73295346769471`,10.387042830895078`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],EdgeForm[None]},{},InsetBox[StyleBox[
+RotationBox["\"The Art of War\"",BoxRotation -> 0.`],StripOnInput -> False,LineOpacity -> 1,
+FrontFaceOpacity -> 1,BackFaceOpacity -> 1,Opacity -> 1,FontOpacity -> 1],Offset[
+{-47.65685424949238`,7.25685424949238`},{24.73295346769471`,10.387042830895078`}],
+NCache[ImageScaled[{Rational[1,2],Rational[1,2]}],ImageScaled[{0.5`,0.5`}]]]}],GraphicsGroupBox[
+{{GrayLevel[1],AbsoluteThickness[4],Opacity[NCache[Rational[2,3],0.6666666666666666`]],CapForm[
+"Butt"],JoinForm["Round"],BSplineCurveBox[{Offset[{2.121320343559643`,2.1213203435596424`},
+{7.2934835395109525`,-19.918291174235325`}],Offset[{5.656854249492381`,5.65685424949238`},
+{7.2934835395109525`,-19.918291174235325`}],Offset[{7.65685424949238`,5.65685424949238`},
+{7.2934835395109525`,-19.918291174235325`}],Offset[{9.65685424949238`,5.65685424949238`},
+{7.2934835395109525`,-19.918291174235325`}],Offset[{9.65685424949238`,5.65685424949238`},
+{7.2934835395109525`,-19.918291174235325`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],BSplineCurveBox[{Offset[{2.121320343559643`,2.1213203435596424`},
+{7.2934835395109525`,-19.918291174235325`}],Offset[{5.656854249492381`,5.65685424949238`},
+{7.2934835395109525`,-19.918291174235325`}],Offset[{7.65685424949238`,5.65685424949238`},
+{7.2934835395109525`,-19.918291174235325`}],Offset[{9.65685424949238`,5.65685424949238`},
+{7.2934835395109525`,-19.918291174235325`}],Offset[{9.65685424949238`,5.65685424949238`},
+{7.2934835395109525`,-19.918291174235325`}]}]},{EdgeForm[None],FaceForm[{GrayLevel[
+1],Opacity[NCache[Rational[2,3],0.6666666666666666`]]}],PolygonBox[{Offset[{73.65685424949238`,15.256854249492386`},
+{7.2934835395109525`,-19.918291174235325`}],Offset[{73.65685424949238`,-0.7431457505076136`},
+{7.2934835395109525`,-19.918291174235325`}],Offset[{9.656854249492383`,-0.7431457505076278`},
+{7.2934835395109525`,-19.918291174235325`}],Offset[{9.656854249492383`,15.256854249492372`},
+{7.2934835395109525`,-19.918291174235325`}]}]},{RGBColor[0.6666666666666666`,0.6666666666666666`,
+0.6666666666666666`],AbsoluteThickness[1.25`],EdgeForm[None]},{},InsetBox[StyleBox[
+RotationBox["\"Mein Kampf\"",BoxRotation -> 0.`],StripOnInput -> False,LineOpacity -> 1,
+FrontFaceOpacity -> 1,BackFaceOpacity -> 1,Opacity -> 1,FontOpacity -> 1],Offset[
+{41.65685424949238`,7.256854249492379`},{7.2934835395109525`,-19.918291174235325`}],
+NCache[ImageScaled[{Rational[1,2],Rational[1,2]}],ImageScaled[{0.5`,0.5`}]]]}]}},{}},{}}},
+AspectRatio -> NCache[Power[GoldenRatio,-1],0.6180339887498948`],Axes -> {False,False},
+AxesLabel -> {FormBox[TagBox["\"UMAP-1\"",HoldForm],TraditionalForm],FormBox[TagBox[
+"\"UMAP-2\"",HoldForm],TraditionalForm]},AxesOrigin -> {0,0},DisplayFunction -> Identity,
+Frame -> {{True,True},{True,True}},FrameLabel -> {{None,None},{None,None}},FrameStyle -> Automatic,
+FrameTicks -> {{Automatic,Automatic},{Automatic,Automatic}},GridLines -> {Automatic,Automatic},
+GridLinesStyle -> Directive[GrayLevel[0.4`,0.5`],AbsoluteThickness[1],AbsoluteDashing[
+{1,2}]],ImagePadding -> {{All,All},{All,All}},ImageSize -> {320.25`,Automatic},Method -> {"AxisPadding" -> Scaled[
+0.02`],"DefaultBoundaryStyle" -> Automatic,"DefaultGraphicsInteraction" -> {"Version" -> 1.2`,"TrackMousePosition" -> {True,False},"Effects" -> {"Highlight" -> {"ratio" -> 2},"HighlightPoint" -> {"ratio" -> 2},"Droplines" -> {"freeformCursorMode" -> True,"placement" -> {"x" -> "All","y" -> "None"}}}},"DefaultMeshStyle" -> AbsolutePointSize[
+6],"DefaultPlotStyle" -> {Directive[RGBColor[0.24`,0.6`,0.8`],AbsoluteThickness[2]],Directive[
+RGBColor[0.95`,0.627`,0.1425`],AbsoluteThickness[2]],Directive[RGBColor[0.455`,0.7`,
+0.21`],AbsoluteThickness[2]],Directive[RGBColor[0.922526`,0.385626`,0.209179`],AbsoluteThickness[
+2]],Directive[RGBColor[0.578`,0.51`,0.85`],AbsoluteThickness[2]],Directive[RGBColor[
+0.772079`,0.431554`,0.102387`],AbsoluteThickness[2]],Directive[RGBColor[0.4`,0.64`,
+1.`],AbsoluteThickness[2]],Directive[RGBColor[1.`,0.75`,0.`],AbsoluteThickness[2]],Directive[
+RGBColor[0.8`,0.4`,0.76`],AbsoluteThickness[2]],Directive[RGBColor[0.637`,0.65`,0.`],
+AbsoluteThickness[2]],Directive[RGBColor[0.915`,0.3325`,0.2125`],AbsoluteThickness[
+2]],Directive[RGBColor[0.40082222609352647`,0.5220066643438841`,0.85`],AbsoluteThickness[
+2]],Directive[RGBColor[0.9728288904374106`,0.621644452187053`,0.07336199581899142`],
+AbsoluteThickness[2]],Directive[RGBColor[0.736782672705901`,0.358`,0.5030266573755369`],
+AbsoluteThickness[2]],Directive[RGBColor[0.28026441037696703`,0.715`,0.4292089322474965`],
+AbsoluteThickness[2]]},"DomainPadding" -> Scaled[0.02`],"PointSizeFunction" -> "SmallPointSize","RangePadding" -> Scaled[
+0.05`],"OptimizePlotMarkers" -> True,"IncludeHighlighting" -> "CurrentPoint","HighlightStyle" -> Automatic,"OptimizePlotMarkers" -> True,"CoordinatesToolOptions" -> {"DisplayFunction" -> Function[
+{Function[Identity[Slot[1]]][Part[Slot[1],1]],Function[Identity[Slot[1]]][Part[Slot[
+1],2]]}],"CopiedValueFunction" -> Function[{Function[Identity[Slot[1]]][Part[Slot[
+1],1]],Function[Identity[Slot[1]]][Part[Slot[1],2]]}]}},PlotLabel -> FormBox["\"Document Embedding via UMAP\"",
+TraditionalForm],PlotRange -> {{-3.2452159150196236`,28.738207331892347`},{-20.616786688740177`,17.551315864745664`}},
+PlotRangePadding -> {{Scaled[0.02`],Scaled[0.08`]},{Scaled[0.05`],Scaled[0.12944271909999158`]}},
+Ticks -> {Automatic,Automatic}]}},DefaultBaseStyle -> "Column",GridBoxAlignment -> {"Columns" -> {{Left}}},
+GridBoxItemSize -> {"Columns" -> {{Automatic}},"Rows" -> {{Automatic}}}],"Column"]],
+"Output",CellChangeTimes -> {3.956601256199876`*^9,3.956604770895274`*^9},CellLabel -> "Out[104]=",
+ExpressionUUID -> "bf1be417-3c6c-4431-a733-3bf6da3aa237"],Cell[
+BoxData["$Aborted"],
+"Output",CellChangeTimes -> {3.956601256199876`*^9,3.956861313558346`*^9},CellLabel -> "Out[105]=",
+ExpressionUUID -> "c29d5f89-7734-48a4-8f05-020ab31fc15e"],Cell[
+BoxData[TemplateBox[
+{"Symbol","argx","\"\\!\\(\\*RowBox[{\\\"Symbol\\\"}]\\) called with \\!\\(\\*RowBox[{\\\"0\\\"}]\\) arguments; 1 argument is expected.\"",2,106,14,30051674605320763485,"Local"},
+"MessageTemplate",BaseStyle -> "MSG"]],"Message",CellChangeTimes -> {3.956861313600918`*^9},
+CellLabel -> "During evaluation of In[90]:=",ExpressionUUID -> "f8e9a8c7-21c7-4ca7-9a24-76b0c247581d"],Cell[
+BoxData[
+RowBox[{"Symbol","[","]"}]],"Output",CellChangeTimes -> {3.956601256199876`*^9,3.956861313619584`*^9},
+CellLabel -> "Out[106]=",ExpressionUUID -> "2e84a981-ebf6-4c3d-b891-35c75c9540d4"]},
+Open],ExpressionUUID -> "d747e049-f272-4e9a-9213-1fba3c154d79"]},StyleDefinitions -> "Default.nb",
+WindowSize -> {1440,742.5`},WindowMargins -> {{0,Automatic},{Automatic,0}},FrontEndVersion -> "14.2 for Wolfram Cloud 1.72 (April 27, 2025)",
+ExpressionUUID -> "e35f6af7-5eeb-4a54-bca5-67c78cf85b4d"]

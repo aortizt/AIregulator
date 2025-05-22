@@ -1,0 +1,146 @@
+Notebook[{Cell[
+CellGroupData[{Cell[
+BoxData[{RowBox[{"(* ::Section:: *)\n(* Hybrid Stochastic-Deterministic AI Ruin Simulation with Auto-Diagnosis *)\n\n(* ::Subsection:: *)\n(* 1. Stochastic Gambler's Ruin Simulation *)\n\nClearAll[simulateRuinProcess];"}],"\n",RowBox[
+{"simulateRuinProcess[humanStart_, aiStart_, pHumanWin_, steps_] := Module[\n  {human = humanStart, ai = aiStart, history = {}, i = 0},\n  While[i < steps && human > 0 && ai > 0,\n   i++;\n   If[RandomReal[] < pHumanWin,\n    human++;\n    ai--,\n    human--;\n    ai++\n    ];\n   AppendTo[history, {i, human, ai}];\n   ];\n  {history, human, ai, i}\n  ]"}],"\n\n",RowBox[
+{"(* Run stochastic simulation *)\n{ruinHistory, finalHuman, finalAI, ruinStep} = simulateRuinProcess[10, 90, 0.49, 500];"}],"\n\n",RowBox[
+{"ruinThreshold = 5; (* Define critical zone for ruin detection *)"}],"\n",RowBox[
+{"ruinDetected = finalHuman < ruinThreshold;"}],"\n\n",RowBox[{"Print[\"Stochastic Simulation Complete\"];"}],"\n",RowBox[
+{"Print[\"Final Human Wealth: \", finalHuman];"}],"\n",RowBox[{"Print[\"Final AI Wealth: \", finalAI];"}],"\n",RowBox[
+{"If[ruinDetected, Print[\"Ruin detected at step \", ruinStep], Print[\"No ruin detected\"]];"}],"\n\n",RowBox[
+{"ListLinePlot[\n  {ruinHistory[[All, 2]], ruinHistory[[All, 3]]},\n  PlotLegends \[Rule] {\"Human\", \"AI\"},\n  PlotLabel \[Rule] \"Stochastic Human-AI Interaction (Gambler's Ruin)\",\n  AxesLabel \[Rule] {\"Steps\", \"Wealth\"}\n  ]"}],"\n\n",RowBox[
+{"(* ::Subsection:: *)\n(* 2. Map to Lotka-Volterra Parameters *)\n\nClearAll[deriveLVParams];"}],"\n",RowBox[
+{"deriveLVParams[finalHuman_, finalAI_] := Module[\n  {\n   alpha, beta, delta, gamma,\n   scale = 0.05 + RandomReal[{0, 0.1}]\n   },\n  alpha = 0.6 - scale finalAI;\n  beta = 0.02 + scale;\n  delta = 0.01 + scale;\n  gamma = 0.5 + scale finalHuman;\n  {alpha, beta, delta, gamma}\n  ]"}],"\n\n",RowBox[
+{"(* ::Subsection:: *)\n(* 3. Lotka-Volterra with Anti-AI AI Regulator + Diagnostics *)\n\nClearAll[simulateLV];"}],"\n",RowBox[
+{"simulateLV[params_, {x0_, y0_, z0_}, tmax_] := Module[\n  {alpha, beta, delta, gamma, eqns, sol},\n  {alpha, beta, delta, gamma} = params;\n  eqns = {\n    x'[t] == alpha x[t] - beta x[t] y[t],\n    y'[t] == delta x[t] y[t] - gamma y[t] - 0.03 y[t] z[t],\n    z'[t] == 0.04 y[t] - 0.02 z[t]\n    };\n  sol = NDSolve[\n    {\n     eqns,\n     x[0] == x0,\n     y[0] == y0,\n     z[0] == z0\n     },\n    {x, y, z},\n    {t, 0, tmax}\n    ];\n  sol\n  ]"}],"\n\n",RowBox[
+{"ClearAll[diagnoseSystem];"}],"\n",RowBox[{"diagnoseSystem[sol_, tmax_] := Module[\n  {xvals, yvals, zvals, extinctQ, stableQ},\n  xvals = x[t] /. sol[[1]] /. t \[Rule] Range[0, tmax, 1];\n  yvals = y[t] /. sol[[1]] /. t \[Rule] Range[0, tmax, 1];\n  zvals = z[t] /. sol[[1]] /. t \[Rule] Range[0, tmax, 1];\n  extinctQ = Max[xvals] < 1 || Max[yvals] < 1;\n  stableQ = And @@ (Abs[Differences[#][[-10 ;;]]] < 0.01 & /@ {xvals, yvals, zvals});\n  {extinctQ, stableQ}\n  ]"}],"\n\n",RowBox[
+{"If[!ruinDetected, Print[\"No ruin detected. Simulation ends.\"]; Abort[]];"}],"\n\n",RowBox[
+{"success = False;"}],"\n",RowBox[{"attempt = 1;"}],"\n",RowBox[{"While[!success && attempt \[LessEqual] 20,\n  Print[\"\\nAttempt \", attempt];\n  params = deriveLVParams[finalHuman, finalAI];\n  lvSol = simulateLV[params, {10, 50, 5}, 100];\n  {extinctQ, stableQ} = diagnoseSystem[lvSol, 100];\n  If[extinctQ,\n   Print[\"Extinction occurred: human or AI population collapsed.\"];,\n   If[stableQ,\n    Print[\"Stable behavior achieved on attempt \", attempt];\n    Print[\"Parameters: alpha=\", params[[1]], \", beta=\", params[[2]], \", delta=\", params[[3]], \", gamma=\", params[[4]]];\n    success = True;,\n    Print[\"Oscillatory or non-converging behavior: retrying with new parameters...\"]\n    ]\n   ];\n  attempt++;\n  ];"}],"\n\n",RowBox[
+{"If[success,\n Plot[\n  Evaluate[{x[t], y[t], z[t]} /. lvSol],\n  {t, 0, 100},\n  PlotLegends \[Rule] {\"Human\", \"AI\", \"Regulator\"},\n  PlotLabel \[Rule] \"Lotka-Volterra Dynamics with Anti-AI AI (Stable Equilibrium Achieved)\",\n  AxesLabel \[Rule] {\"Time\", \"Population\"}\n  ],\n Print[\"Failed to reach stable dynamics after 20 attempts.\"]\n ]\n"}]}],
+"Input",CellLabel -> "In[77]:= ",ExpressionUUID -> "a82ffe9a-29ba-45db-af9c-863ce80cdca0"],Cell[
+BoxData[
+"\"Stochastic Simulation Complete\"",StandardForm],"Print",ExpressionUUID -> "0bcde16d-b2f6-40a5-9732-61062b88510f"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Final Human Wealth: \"","\[InvisibleSpace]","0"}],SequenceForm[
+"Final Human Wealth: ",0],Editable -> False],StandardForm],"Print",ExpressionUUID -> "47131f80-630a-42ee-a9ce-7c1b56b026e1"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Final AI Wealth: \"","\[InvisibleSpace]","100"}],SequenceForm[
+"Final AI Wealth: ",100],Editable -> False],StandardForm],"Print",ExpressionUUID -> "3b7c24a1-a812-405e-b7eb-da1f2d009262"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Ruin detected at step \"","\[InvisibleSpace]","92"}],
+SequenceForm["Ruin detected at step ",92],Editable -> False],StandardForm],"Print",
+ExpressionUUID -> "89a55802-3fde-48a2-8a2a-100e2f20e1dc"],Cell[
+BoxData[TemplateBox[
+{GraphicsBox[{{},{{{},{},TagBox[{Hue[0.67`,0.6`,0.6`],Directive[PointSize[NCache[
+Rational[1,72],0.013888888888888888`]],RGBColor[0.24`,0.6`,0.8`],AbsoluteThickness[
+2]],LineBox[CompressedData["1:eJxd1LtOAkEYxfGJlaWFhYUFEkOMMQS8440BuXjlsqI2VibWvsI82jySjyCEc4r5k5CTw4+ZXXbZb+/7t/rZCCF8Ld+rXL/+uutsRH2gPFBuxtK34NvKQ+WO8ki5q2wqa/A6fB/egPu4LRy3jXX2JrKF77Xhx/AT+Cn2OcM+5/AL+CW8g/2vcPxr+A38VunrcAfvYn0sPUV4D96D98vzT334Pdzdv38AH8CH8CF8pNR9SiP4GD6GP2B/d5//I9zd65+wv7v/J89wd69/wf7uPv6r0tff3fd3Ap/Ap/ApfFZ6nJWe3PWcZXc/h3OlntM4Lz3Bs3tdWWF9VXpy15zI7p4jb6VHd6+HZ3hYYL279k/ummPZ3XPuXak5GN01JxM8w8OHUnM2umsOJ3iGh097+Af2s2qn"]]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#1"]]],TagBox[{Hue[0.9060679774997897`,
+0.6`,0.6`],Directive[PointSize[NCache[Rational[1,72],0.013888888888888888`]],RGBColor[
+0.95`,0.627`,0.1425`],AbsoluteThickness[2]],LineBox[CompressedData["1:eJxd08lKA0EQxvHGk0cPHjx4iCIiIuK+ayp7YmKWSdzAk+DZV+hH60fKI7jMVwP9D4Ti61+qutPDbH1+F18rIYSP3+9fLT/L+n+xF9OCqudVy30Nvl7W9Ky8UdboeVP9nmvwbfgOfBe+p+p5X/svlA/gh+g/wvxj+An8FH6G+efY/wJ+Cb+CX2P+Dfa/hd/B7zXf8wO8jn7LPRq8AW/Am/n5YxPegitX/78Nb8M78A68q3Xl2IX34D14H/P7OP8APkD/I+Yrm/sQPkT/CPNH2P9J6+7K1fMdw8fwCXwCn+Zu09yjsr/fSbl6/2f6nbLNco/wpJy8v0B/kXtUDq9aVzblMM/d5uiHJ3hY5O7PzedXz837lZPv7/f4pj6/R+UIT3C/1+j9fk/eD09wP3d4tx/LgJyb"]]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#2"]]]}},{{},{}}},{DisplayFunction -> Identity,DisplayFunction -> Identity,AspectRatio -> NCache[
+Power[GoldenRatio,-1],0.6180339887498948`],Axes -> {True,True},AxesLabel -> {FormBox[
+TagBox["\"Steps\"",HoldForm],TraditionalForm],FormBox[TagBox["\"Wealth\"",HoldForm],
+TraditionalForm]},AxesOrigin -> {0.`,0},RuleDelayed[DisplayFunction,Identity],Frame -> {{False,False},{False,False}},FrameLabel -> {{None,None},{None,None}},FrameTicks -> {{Automatic,Automatic},{Automatic,Automatic}},GridLines -> {None,None},GridLinesStyle -> Directive[
+GrayLevel[0.5`,0.4`]],Method -> CompressedData["1:eJzlVk1IVFEUnjEz037MIiyoqAikTQtBaGE30xqFRsd55qpFz5n7nJtv3p3ufS9mDFoELYJ2tSmiqBbRDy1Cw4I2LYqyH4vsxx/SslSkNIwgMOjc9+bfcUx6rbrwHufde893vnvOefecjc3UqyxxOBw8F157CdeVnNiX11CxVAhCZZhwj+z3E61FcYrVPHhJPlnFfnZk1U3XUNtplKa2CoRqrMiGqu+ihuaXWUTSIyrmiwWeodOgrBNfmtLahJKLyaEA8fFaTcdM9umEasqCLDQXgdCEGYd9rMwcU+mUikFoBKxWNzU49lBOTNScZFRTaGQG5gtB2COrHGcwtFtRsE/nWQmJc9aQloAKj255bZadwhIDb1Ai5tMWlyXDeCjR/gJLUKpmNKQSDfPUc2dwlcIwVigLVhmMU+amfhx3TgbckCr7cBBrelZcQT0sCbdVqmqGtYgkPuuolm6iKJEZbswDZipZjlghwJo5VQ0dm/6RSBsmeTNPnwThUaluQSyfSdb0EmEQYHIYWyHOFxiuXVVUpYx1rj8+3tD5DEXT7CNiZ8+IMYZmEmqEFG4FZ/OkcMyFr5jjK2LXvr10NxcNI1ZR8OZyqOK+TfgbBP31Ayhq6DNiQ23iH35sE/6rjh879h3/glj/tgs3Sm6+RazU5bx04IFd+J+6N/X9PPoBMa8ZicFYIMZtwvd2DOS+bx9F7Fz9uuunz/chNrnmRHd++V2b8K1seYeiNyfE12GOSZvwY2hRYTQmgL6N/MdQ4iBWIEZt4j99VeQ9uOXpEzGG7eZfY6Y75Kcl9MTyp8sm/lu3b6kuvgJu2dnzvcHVbnt+0sKLSw9unEAsUDU9cmwY7p/enudLeh/esgn/pONQ5Z1TI4jdnvr1Kjz2GrG95XX7u0oGbcK/5Cnb3DvxInbtwP3T0v/oXmm47w/x4xf6UmEI+giizbM3Ee2OV9Za8Gx6VmZfTddbCUJ9SCdBqDCihLhl1gotx2xlUWyv1Xyq4cfxCg7WpAKYh6LKoFhKOL1CptT7uTumeVJaLUxTyuDUso55I6Wq0KZa9nZguRlSDjU+ssfQrGbMGQtsfCYVwRn/YVM2xWdq/XB+okcS7YwE/IkzJc4emekZNpA4+D+zkCHfVprOCxHsb5JVA/9PnvgNvJcw7Q=="],PlotLabel -> FormBox[
+"\"Stochastic Human-AI Interaction (Gambler's Ruin)\"",TraditionalForm],PlotRange -> {{0.`,92.`},{0,100.`}},PlotRangeClipping -> True,PlotRangePadding -> {{Scaled[
+0.02`],Scaled[0.02`]},{Scaled[0.02`],Scaled[0.05`]}},Ticks -> {Automatic,Automatic}}],FormBox[
+FormBox[TemplateBox[{"\"Human\"","\"AI\""},"LineLegend",DisplayFunction -> Function[
+FormBox[StyleBox[StyleBox[PaneBox[TagBox[GridBox[{{TagBox[GridBox[{{GraphicsBox[{{Directive[
+EdgeForm[Directive[Opacity[0.3`],GrayLevel[0]]],PointSize[0.5`],RGBColor[0.24`,0.6`,
+0.8`],AbsoluteThickness[2]],{LineBox[{{0,12.5`},{20,12.5`}}]}},{Directive[EdgeForm[
+Directive[Opacity[0.3`],GrayLevel[0]]],PointSize[0.5`],RGBColor[0.24`,0.6`,0.8`],
+AbsoluteThickness[2]],{}}},AspectRatio -> Full,ImageSize -> {20,12.5`},PlotRangePadding -> None,
+ImagePadding -> Automatic,BaselinePosition -> (Scaled[0.18000000000000002`] -> Baseline)],Slot[
+1]},{GraphicsBox[{{Directive[EdgeForm[Directive[Opacity[0.3`],GrayLevel[0]]],PointSize[
+0.5`],RGBColor[0.95`,0.627`,0.1425`],AbsoluteThickness[2]],{LineBox[{{0,12.5`},{20,12.5`}}]}},{Directive[
+EdgeForm[Directive[Opacity[0.3`],GrayLevel[0]]],PointSize[0.5`],RGBColor[0.95`,0.627`,
+0.1425`],AbsoluteThickness[2]],{}}},AspectRatio -> Full,ImageSize -> {20,12.5`},PlotRangePadding -> None,
+ImagePadding -> Automatic,BaselinePosition -> (Scaled[0.18000000000000002`] -> Baseline)],Slot[
+2]}},GridBoxAlignment -> {"Columns" -> {Center,Left},"Rows" -> {{Baseline}}},AutoDelete -> False,
+GridBoxDividers -> {"Columns" -> {{False}},"Rows" -> {{False}}},GridBoxItemSize -> {"Columns" -> {{All}},"Rows" -> {{All}}},
+GridBoxSpacings -> {"Columns" -> {{0.5`}},"Rows" -> {{0.8`}}}],"Grid"]}},GridBoxAlignment -> {"Columns" -> {{Left}},"Rows" -> {{Top}}},
+AutoDelete -> False,GridBoxItemSize -> {"Columns" -> {{Automatic}},"Rows" -> {{Automatic}}},
+GridBoxSpacings -> {"Columns" -> {{1}},"Rows" -> {{0}}}],"Grid"],Alignment -> Left,
+AppearanceElements -> None,ImageMargins -> {{5,5},{5,5}},ImageSizeAction -> "ResizeToFit"],
+LineIndent -> 0,StripOnInput -> False],{FontFamily -> "Arial"},Background -> Automatic,
+StripOnInput -> False],TraditionalForm]],RuleDelayed[InterpretationFunction,Function[
+RowBox[{"LineLegend","[",RowBox[{RowBox[{"{",RowBox[{RowBox[{"Directive","[",RowBox[
+{RowBox[{"PointSize","[",FractionBox["1","72"],"]"}],",",TemplateBox[Association[
+"color" -> RGBColor[0.24`,0.6`,0.8`]],"RGBColorSwatchTemplate"],",",RowBox[{"AbsoluteThickness","[","2","]"}]}],"]"}],",",RowBox[
+{"Directive","[",RowBox[{RowBox[{"PointSize","[",FractionBox["1","72"],"]"}],",",TemplateBox[
+Association["color" -> RGBColor[0.95`,0.627`,0.1425`]],"RGBColorSwatchTemplate"],",",RowBox[
+{"AbsoluteThickness","[","2","]"}]}],"]"}]}],"}"}],",",RowBox[{"{",RowBox[{Slot[1],",",Slot[
+2]}],"}"}],",",RowBox[{"LegendMarkers","\[Rule]",RowBox[{"{",RowBox[{RowBox[{"{",RowBox[
+{"False",",","Automatic"}],"}"}],",",RowBox[{"{",RowBox[{"False",",","Automatic"}],"}"}]}],"}"}]}],",",RowBox[
+{"Joined","\[Rule]",RowBox[{"{",RowBox[{"True",",","True"}],"}"}]}],",",RowBox[{"LabelStyle","\[Rule]",RowBox[
+{"{","}"}]}],",",RowBox[{"LegendLayout","\[Rule]","\"Column\""}]}],"]"}]]],Editable -> True],
+TraditionalForm],TraditionalForm]},"Legended",DisplayFunction -> Function[GridBox[
+{{TagBox[ItemBox[PaneBox[TagBox[Slot[1],"SkipImageSizeLevel"],Alignment -> {Center,Baseline},
+BaselinePosition -> Baseline],DefaultBaseStyle -> "Labeled"],"SkipImageSizeLevel"],ItemBox[
+Slot[2],DefaultBaseStyle -> "LabeledLabel"]}},GridBoxAlignment -> {"Columns" -> {{Center}},"Rows" -> {{Center}}},
+AutoDelete -> False,GridBoxItemSize -> Automatic,BaselinePosition -> {1,1}]],InterpretationFunction -> Function[
+RowBox[{"Legended","[",RowBox[{Slot[1],",",RowBox[{"Placed","[",RowBox[{Slot[2],",","After"}],"]"}]}],"]"}]],
+Editable -> True],StandardForm],"Output",CellLabel -> "Out[86]= ",ExpressionUUID -> "0bda2cca-1107-40fd-8dda-4865c227cabb"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","1"}],SequenceForm[
+"\nAttempt ",1],Editable -> False],StandardForm],"Print",ExpressionUUID -> "f7c032a8-71e2-4d18-8813-58b7ce980b07"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","2"}],SequenceForm[
+"\nAttempt ",2],Editable -> False],StandardForm],"Print",ExpressionUUID -> "61e8f2d4-aba0-47f5-a883-df5b679a1bc8"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","3"}],SequenceForm[
+"\nAttempt ",3],Editable -> False],StandardForm],"Print",ExpressionUUID -> "30f3946a-d013-4817-a7ea-25c68661786b"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","4"}],SequenceForm[
+"\nAttempt ",4],Editable -> False],StandardForm],"Print",ExpressionUUID -> "64a8c042-f151-4631-b1e4-b5db3af6db06"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","5"}],SequenceForm[
+"\nAttempt ",5],Editable -> False],StandardForm],"Print",ExpressionUUID -> "c7b38e66-aef6-4b30-9898-6b6ff7c28f6e"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","6"}],SequenceForm[
+"\nAttempt ",6],Editable -> False],StandardForm],"Print",ExpressionUUID -> "5229d9a6-a57c-4816-b5cc-39c7f44a6cf2"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","7"}],SequenceForm[
+"\nAttempt ",7],Editable -> False],StandardForm],"Print",ExpressionUUID -> "e8025158-cee3-4a71-92b2-1d33252de626"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","8"}],SequenceForm[
+"\nAttempt ",8],Editable -> False],StandardForm],"Print",ExpressionUUID -> "80a845fa-7180-47f9-acb0-82c06af57c31"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","9"}],SequenceForm[
+"\nAttempt ",9],Editable -> False],StandardForm],"Print",ExpressionUUID -> "978f2a8f-003e-4264-9f35-cf663e16a4b8"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","10"}],SequenceForm[
+"\nAttempt ",10],Editable -> False],StandardForm],"Print",ExpressionUUID -> "f44b50f7-edff-4d20-8506-688ab6ebccda"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","11"}],SequenceForm[
+"\nAttempt ",11],Editable -> False],StandardForm],"Print",ExpressionUUID -> "9879515a-b8d0-4169-b8f1-fd7e0c97eca9"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","12"}],SequenceForm[
+"\nAttempt ",12],Editable -> False],StandardForm],"Print",ExpressionUUID -> "caf9c3fc-f8a5-452f-8249-720c73149db7"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","13"}],SequenceForm[
+"\nAttempt ",13],Editable -> False],StandardForm],"Print",ExpressionUUID -> "f65f0222-d36a-499f-b379-55e31b93d8ae"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","14"}],SequenceForm[
+"\nAttempt ",14],Editable -> False],StandardForm],"Print",ExpressionUUID -> "fc4d370d-c5b5-42b8-93ba-0ae8811b9a54"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","15"}],SequenceForm[
+"\nAttempt ",15],Editable -> False],StandardForm],"Print",ExpressionUUID -> "253f6b15-b17f-485e-864e-9012bca5cc90"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","16"}],SequenceForm[
+"\nAttempt ",16],Editable -> False],StandardForm],"Print",ExpressionUUID -> "943b04a4-811a-4169-a782-95946a5201b5"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","17"}],SequenceForm[
+"\nAttempt ",17],Editable -> False],StandardForm],"Print",ExpressionUUID -> "2b176ca8-2b3c-406d-8155-564553e5dcb7"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","18"}],SequenceForm[
+"\nAttempt ",18],Editable -> False],StandardForm],"Print",ExpressionUUID -> "6b8e4929-fec7-4aa8-9841-18aebebd2178"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","19"}],SequenceForm[
+"\nAttempt ",19],Editable -> False],StandardForm],"Print",ExpressionUUID -> "994a2662-6b11-42f5-9298-a6bda4a77142"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","20"}],SequenceForm[
+"\nAttempt ",20],Editable -> False],StandardForm],"Print",ExpressionUUID -> "bcc59171-dad6-4051-8eaa-cfcef4abaf9b"],Cell[
+BoxData[
+"\"Failed to reach stable dynamics after 20 attempts.\"",StandardForm],"Print",ExpressionUUID -> "8a8fb48a-ddab-4443-8f62-2dfc91c8bc2f"]},
+Open],ExpressionUUID -> "5a8a178e-5f32-4c09-91fb-1c5f7b83cc1c"]},StyleDefinitions -> "Default.nb",
+FrontEndVersion -> "14.2 for Wolfram Cloud 1.72 (April 27, 2025)"]

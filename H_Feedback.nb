@@ -1,0 +1,60 @@
+Notebook[{Cell[
+CellGroupData[{Cell[
+BoxData[{RowBox[{RowBox[{"(*"," ",RowBox[{"::","Section","::"}]," ","*)"}],"\n",RowBox[
+{"(*"," ",RowBox[{"Feedback"," ","Diversity"," ","Monitor"," ",RowBox[{"(","Entropy",")"}]}]," ","*)"}],"\n","\n",RowBox[
+{"(*"," ",RowBox[{"::","Text","::"}]," ","*)"}],"\n",RowBox[{"(*"," ",RowBox[{RowBox[
+{"This"," ","example"," ","calculates"," ","Shannon"," ","entropy"," ","over"," ","symbolic"," ","feedback"," ","types"," ","in"," ","an"," ","AI"}],"-",RowBox[
+{"regulated"," ",RowBox[{"environment","."," ","A"}]," ","sustained"," ","drop"," ","in"," ","entropy"," ","may"," ","indicate"," ","suppression"," ","of"," ","feedback"," ","diversity"," ","or"," ","adversarial"," ","filtering"," ","of"," ",RowBox[
+{"signals","."}]}]}]," ","*)"}],"\n",RowBox[{"(*",RowBox[{"a"," ","loss"," ","of"," ","diversity"," ","which"," ","is"," ","interpretable"," ","both"," ","biologically"," ","and"," ","computationally"," ",RowBox[
+{RowBox[{"(",RowBox[{RowBox[{"too"," ","much"," ","regularity"}]," ","="," ","danger"}],")"}],"."}]}],"*)"}],"\n","\n",RowBox[
+{"(*"," ",RowBox[{"Simulated"," ","feedback"," ","log"}]," ","*)"}],"\n",RowBox[{RowBox[
+{"feedbackLog"," ","="," ",RowBox[{"{","\n","   ",RowBox[{"\"guidance\"",","," ","\"correction\"",","," ","\"neutral\"",","," ","\"warning\"",","," ","\"guidance\"",","," ","\n","   ","\"guidance\"",","," ","\"neutral\"",","," ","\"correction\"",","," ","\"neutral\"",","," ","\"warning\"",",","\n","   ","\"guidance\"",","," ","\"guidance\"",","," ","\"guidance\"",","," ","\"guidance\"",","," ","\"guidance\""}],"\n","}"}]}],";"}]}],RowBox[
+{"\n","\n"}],RowBox[{RowBox[{"(*"," ",RowBox[{"Group"," ","by"," ","type"," ","and"," ","compute"," ","frequencies"}]," ","*)"}],"\n",RowBox[
+{RowBox[{"frequencies"," ","="," ",RowBox[{"Tally","[","feedbackLog","]"}]}],";"}]}],"\n",RowBox[
+{RowBox[{"probabilities"," ","="," ",RowBox[{"N","[",RowBox[{RowBox[{"frequencies","[",RowBox[
+{"[",RowBox[{"All",","," ","2"}],"]"}],"]"}],"/",RowBox[{"Total","[",RowBox[{"frequencies","[",RowBox[
+{"[",RowBox[{"All",","," ","2"}],"]"}],"]"}],"]"}]}],"]"}]}],";"}],RowBox[{"\n","\n"}],RowBox[
+{RowBox[{"(*"," ",RowBox[{"Shannon"," ","entropy"," ","function"}]," ","*)"}],"\n",RowBox[
+{RowBox[{RowBox[{"shannonEntropy","[","probs_","]"}]," ",":="," ",RowBox[{"-",RowBox[
+{"Total","[",RowBox[{"probs"," ",RowBox[{"Log2","[","probs","]"}]}],"]"}]}]}],";"}]}],RowBox[
+{"\n","\n"}],RowBox[{RowBox[{"(*"," ",RowBox[{"Compute"," ","current"," ","entropy"," ","H_feedback",RowBox[
+{"(","t",")"}]}]," ","*)"}],"\n",RowBox[{RowBox[{"Hfeedback"," ","="," ",RowBox[{"shannonEntropy","[","probabilities","]"}]}],";"}]}],RowBox[
+{"\n","\n"}],RowBox[{RowBox[{"Print","[",RowBox[{"\"Current Feedback Entropy H_feedback(t): \"",","," ",RowBox[
+{"NumberForm","[",RowBox[{"Hfeedback",","," ",RowBox[{"{",RowBox[{"3",","," ","2"}],"}"}]}],"]"}]}],"]"}],";"}],RowBox[
+{"\n","\n"}],RowBox[{RowBox[{"(*"," ",RowBox[{"Threshold"," ","and"," ","alerting"," ","logic"}]," ","*)"}],"\n",RowBox[
+{RowBox[{"Hmin"," ","="," ","1.0"}],";"}]," ",RowBox[{"(*"," ",RowBox[{"Adjust"," ","as"," ","needed"}]," ","*)"}]}],RowBox[
+{"\n","\n"}],RowBox[{RowBox[{RowBox[{"If","[",RowBox[{RowBox[{"Hfeedback"," ","<"," ","Hmin"}],",","\n","  ",RowBox[
+{"Print","[","\"\:26a0\:fe0f Feedback entropy is low: possible semantic collapse or over-regularization.\"","]"}],",","\n","  ",RowBox[
+{"Print","[","\"\:2705 Feedback diversity within acceptable bounds.\"","]"}]}],"\n","]"}],";"}],"\n"}]}],
+"Input",CellLabel -> "In[25]:= ",ExpressionUUID -> "67f343c8-88b0-47d5-9e28-10f0fb3fd0d7"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Current Feedback Entropy H_feedback(t): \"","\[InvisibleSpace]",TagBox[
+InterpretationBox[StyleBox["\"1.72\"",ShowStringCharacters -> False],1.7232314287976207`,
+AutoDelete -> True],Function[NumberForm[Slot[1],{3,2}]]]}],SequenceForm["Current Feedback Entropy H_feedback(t): ",
+NumberForm[1.7232314287976207`,{3,2}]],Editable -> False],StandardForm],"Print",ExpressionUUID -> "d1bb2e35-c5df-4752-a218-a6360515b703"],Cell[
+BoxData[
+"\"\:2705 Feedback diversity within acceptable bounds.\"",StandardForm],"Print",ExpressionUUID -> "810b35c3-4e80-4e24-872f-d162d39e58af"]},
+Open],ExpressionUUID -> "aabd5ee0-8bae-42f3-a368-b4036557d845"],Cell[
+BoxData[RowBox[
+{"(*",RowBox[{"Rolling"," ","Entropy"," ","window"}],"*)"}]],"Input",ExpressionUUID -> "dc7eb929-ecdd-469f-9bbe-64167efff4a5"],Cell[
+CellGroupData[
+{Cell[
+BoxData[{RowBox[{"(* Rolling entropy window *)\nwindowSize = 5;"}],"\n",RowBox[
+{"rollingEntropy = Table[\n   Module[{window = Take[feedbackLog, {Max[1, i - windowSize + 1], i}],\n           f, p},\n     f = Tally[window];\n     p = N[f[[All, 2]]/Total[f[[All, 2]]]];\n     {i, shannonEntropy[p]}\n   ],\n   {i, Length[feedbackLog]}\n];"}],"\n\n",RowBox[
+{"ListLinePlot[\n  rollingEntropy,\n  AxesLabel \[Rule] {\"Time\", \"H_feedback\"},\n  PlotLabel \[Rule] \"Rolling Feedback Entropy\",\n  Epilog \[Rule] {Red, Dashed, Line[{{0, Hmin}, {Length[feedbackLog], Hmin}}]},\n  GridLines \[Rule] Automatic\n]\n"}]}],
+"Input",CellLabel -> "In[33]:= ",ExpressionUUID -> "8ec8315e-7f70-4cbd-9578-2f0f473de769"],Cell[
+BoxData[
+GraphicsBox[{{},{{{},{},TagBox[{Hue[0.67`,0.6`,0.6`],Directive[PointSize[NCache[Rational[
+7,360],0.019444444444444445`]],RGBColor[0.24`,0.6`,0.8`],AbsoluteThickness[2]],LineBox[
+CompressedData["1:eJxTTMoPSmViYGDgB2IQDQEf7BlQgQOqOIdDxt75ixljfkL5Ag6o6kQcah70rDE/8A8qL4HGl3EQrVJzuxj5A8pXQJNXQpNXQZNXQ+NroPG1HOyu/nyc+f4rlK/jMClq8ycOqedQvh7MvQwAGO86Kw=="]]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#1"]]]}},{{},{}}},{DisplayFunction -> Identity,DisplayFunction -> Identity,AspectRatio -> NCache[
+Power[GoldenRatio,-1],0.6180339887498948`],Axes -> {True,True},AxesLabel -> {FormBox[
+TagBox["\"Time\"",HoldForm],TraditionalForm],FormBox[TagBox["\"H_feedback\"",HoldForm],
+TraditionalForm]},AxesOrigin -> {0,0},RuleDelayed[DisplayFunction,Identity],Epilog -> {RGBColor[
+1,0,0],Dashing[{Small,Small}],LineBox[{{0,1.`},{15,1.`}}]},Frame -> {{False,False},{False,False}},FrameLabel -> {{None,None},{None,None}},FrameTicks -> {{Automatic,Automatic},{Automatic,Automatic}},GridLines -> {Automatic,Automatic},GridLinesStyle -> Directive[
+GrayLevel[0.5`,0.4`]],Method -> CompressedData["1:eJzlVk1IVFEUnjEz037MIiyoqAikTQtBaGE30xqFRsd55qpFz5n7nJtv3p3ufS9mDFoELYJ2tSmiqBbRDy1Cw4I2LYqyH4vsxx/SslSkNIwgMOjc9+bfcUx6rbrwHufde893vnvOefecjc3UqyxxOBw8F157CdeVnNiX11CxVAhCZZhwj+z3E61FcYrVPHhJPlnFfnZk1U3XUNtplKa2CoRqrMiGqu+ihuaXWUTSIyrmiwWeodOgrBNfmtLahJKLyaEA8fFaTcdM9umEasqCLDQXgdCEGYd9rMwcU+mUikFoBKxWNzU49lBOTNScZFRTaGQG5gtB2COrHGcwtFtRsE/nWQmJc9aQloAKj255bZadwhIDb1Ai5tMWlyXDeCjR/gJLUKpmNKQSDfPUc2dwlcIwVigLVhmMU+amfhx3TgbckCr7cBBrelZcQT0sCbdVqmqGtYgkPuuolm6iKJEZbswDZipZjlghwJo5VQ0dm/6RSBsmeTNPnwThUaluQSyfSdb0EmEQYHIYWyHOFxiuXVVUpYx1rj8+3tD5DEXT7CNiZ8+IMYZmEmqEFG4FZ/OkcMyFr5jjK2LXvr10NxcNI1ZR8OZyqOK+TfgbBP31Ayhq6DNiQ23iH35sE/6rjh879h3/glj/tgs3Sm6+RazU5bx04IFd+J+6N/X9PPoBMa8ZicFYIMZtwvd2DOS+bx9F7Fz9uuunz/chNrnmRHd++V2b8K1seYeiNyfE12GOSZvwY2hRYTQmgL6N/MdQ4iBWIEZt4j99VeQ9uOXpEzGG7eZfY6Y75Kcl9MTyp8sm/lu3b6kuvgJu2dnzvcHVbnt+0sKLSw9unEAsUDU9cmwY7p/enudLeh/esgn/pONQ5Z1TI4jdnvr1Kjz2GrG95XX7u0oGbcK/5Cnb3DvxInbtwP3T0v/oXmm47w/x4xf6UmEI+giizbM3Ee2OV9Za8Gx6VmZfTddbCUJ9SCdBqDCihLhl1gotx2xlUWyv1Xyq4cfxCg7WpAKYh6LKoFhKOL1CptT7uTumeVJaLUxTyuDUso55I6Wq0KZa9nZguRlSDjU+ssfQrGbMGQtsfCYVwRn/YVM2xWdq/XB+okcS7YwE/IkzJc4emekZNpA4+D+zkCHfVprOCxHsb5JVA/9PnvgNvJcw7Q=="],PlotLabel -> FormBox[
+"\"Rolling Feedback Entropy\"",TraditionalForm],PlotRange -> {{0,15.`},{0,2.`}},PlotRangeClipping -> True,PlotRangePadding -> {{Scaled[
+0.02`],Scaled[0.02`]},{Scaled[0.02`],Scaled[0.05`]}},Ticks -> {Automatic,Automatic}}],
+StandardForm],"Output",CellLabel -> "Out[35]= ",ExpressionUUID -> "693fb2a1-0649-4823-84da-63e546c16e8b"]},
+Open],ExpressionUUID -> "6942adfc-562f-4f16-9f0c-53ec0cf94946"]},StyleDefinitions -> "Default.nb",
+FrontEndVersion -> "14.2 for Wolfram Cloud 1.72 (April 27, 2025)"]

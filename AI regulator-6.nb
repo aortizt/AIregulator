@@ -1,0 +1,1963 @@
+Notebook[{Cell[
+CellGroupData[{Cell[
+BoxData[{RowBox[{"(* ::Section:: *)\n(* Hybrid Batch Simulation: Human-AI Dynamics with Outcome Logging and CSV Export *)\n\n(* ::Subsection:: *)\n(* 1. Stochastic Gambler's Ruin Simulation *)\n\nClearAll[simulateRuinProcess];"}],"\n",RowBox[
+{"simulateRuinProcess[humanStart_, aiStart_, pHumanWin_, steps_] := Module[\n  {human = humanStart, ai = aiStart, history = {}, i = 0},\n  While[i < steps && human > 0 && ai > 0,\n   i++;\n   If[RandomReal[] < pHumanWin,\n    human++;\n    ai--,\n    human--;\n    ai++\n    ];\n   AppendTo[history, {i, human, ai}];\n   ];\n  {history, human, ai, i}\n  ]"}],"\n\n",RowBox[
+{"(* ::Subsection:: *)\n(* 2. Parameter Mapping and Deterministic Simulation *)\n\nClearAll[deriveLVParams];"}],"\n",RowBox[
+{"deriveLVParams[finalHuman_, finalAI_] := Module[\n  {scale, alpha, beta, delta, gamma},\n  scale = 0.05 + RandomReal[{0, 0.1}];\n  alpha = 0.6 - scale finalAI;\n  beta = 0.02 + scale;\n  delta = 0.01 + scale;\n  gamma = 0.5 + scale finalHuman;\n  {alpha, beta, delta, gamma}\n  ]"}],"\n\n",RowBox[
+{"ClearAll[simulateLV];"}],"\n",RowBox[{"simulateLV[params_, {x0_, y0_, z0_}, tmax_] := Module[\n  {alpha, beta, delta, gamma, eqns, sol},\n  {alpha, beta, delta, gamma} = params;\n  eqns = {\n    x'[t] == alpha x[t] - beta x[t] y[t] + 0.01 x[t] z[t],\n    y'[t] == delta x[t] y[t] - gamma y[t] - 0.06 y[t] z[t],\n    z'[t] == 0.08 y[t] - 0.02 z[t]\n    };\n  sol = NDSolve[\n    {\n     eqns,\n     x[0] == x0,\n     y[0] == y0,\n     z[0] == z0\n     },\n    {x, y, z},\n    {t, 0, tmax}\n    ];\n  sol\n  ]"}],"\n\n",RowBox[
+{"ClearAll[diagnoseSystem];"}],"\n",RowBox[{"diagnoseSystem[sol_, tmax_] := Module[\n  {xvals, yvals, zvals, extinctQ, stableQ, chaoticSurvivalQ, minPop},\n  xvals = x[t] /. sol[[1]] /. t \[Rule] Range[0, tmax, 1];\n  yvals = y[t] /. sol[[1]] /. t \[Rule] Range[0, tmax, 1];\n  zvals = z[t] /. sol[[1]] /. t \[Rule] Range[0, tmax, 1];\n  minPop = Min[Join[xvals, yvals]];\n  extinctQ = minPop < 1;\n  stableQ = And @@ (Abs[Differences[#][[-10 ;;]]] < 0.01 & /@ {xvals, yvals, zvals});\n  chaoticSurvivalQ = (!extinctQ) && (!stableQ);\n  {extinctQ, stableQ, chaoticSurvivalQ, {xvals, yvals, zvals}}\n  ]"}],"\n\n",RowBox[
+{"(* ::Subsection:: *)\n(* 3. Batch Execution and Logging *)\n\nClearAll[runBatchSimulations];"}],"\n",RowBox[
+{"runBatchSimulations[n_] := Module[\n  {results = {}, i, ruinThreshold = 5, ruinThresholdStep = 200},\n  For[i = 1, i \[LessEqual] n, i++,\n   Print[\"Running simulation \", i];\n   {ruinHistory, finalHuman, finalAI, ruinStep} = simulateRuinProcess[10, 90, 0.49, 500];\n   outcome = \"none\";\n   lvParams = {\"NA\", \"NA\", \"NA\", \"NA\"};\n   If[finalHuman < ruinThreshold && ruinStep \[GreaterEqual] ruinThresholdStep,\n    params = deriveLVParams[finalHuman, finalAI];\n    lvSol = simulateLV[params, {10, 50, 5}, 100];\n    {extinctQ, stableQ, chaoticQ, _} = diagnoseSystem[lvSol, 100];\n    lvParams = params;\n    outcome = If[extinctQ, \"extinction\", If[stableQ, \"stable\", \"chaotic\"]];\n    ];\n   AppendTo[results, <|\n     \"Simulation\" \[Rule] i,\n     \"RuinStep\" \[Rule] ruinStep,\n     \"FinalHuman\" \[Rule] finalHuman,\n     \"FinalAI\" \[Rule] finalAI,\n     \"Alpha\" \[Rule] lvParams[[1]],\n     \"Beta\" \[Rule] lvParams[[2]],\n     \"Delta\" \[Rule] lvParams[[3]],\n     \"Gamma\" \[Rule] lvParams[[4]],\n     \"Outcome\" \[Rule] outcome\n     |>];\n   ];\n  results\n  ]"}],"\n\n",RowBox[
+{"(* ::Subsection:: *)\n(* 4. Run, View, and Export *)\n\nbatchResults = runBatchSimulations[100];"}],"\n",RowBox[
+{"resultDataset = Dataset[batchResults];"}],"\n",RowBox[{"Print[resultDataset];"}],"\n\n",RowBox[
+{"Export[\"human_ai_batch_results.csv\", resultDataset];\n"}]}],"Input",CellLabel -> "In[1]:= ",
+ExpressionUUID -> "10299b19-c06c-40a7-9b3c-26c8b93159af"],Cell[
+BoxData[InterpretationBox[
+RowBox[{"\"Running simulation \"","\[InvisibleSpace]","1"}],SequenceForm["Running simulation ",
+1],Editable -> False],StandardForm],"Print",ExpressionUUID -> "570dbd4d-15ac-49e9-bf56-385f41caecd4"]},
+Open],ExpressionUUID -> "fcf11d76-3e6f-41c3-8fbf-e4e1d9ae1958"],Cell[
+BoxData[TemplateBox[
+{"Set","nosym","\"\\!\\(\\*TagBox[\\\"_\\\", Short[#1, 5] & ]\\) does not contain a symbol to attach a rule to.\"",2,11,1,34389931952440547402,"Local"},
+"MessageTemplate",BaseStyle -> "MSG"],StandardForm],"MSG","Message",ExpressionUUID -> "a73eb375-ea48-4a50-a27f-653e4a60540a"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","2"}],SequenceForm[
+"Running simulation ",2],Editable -> False],StandardForm],"Print",ExpressionUUID -> "5a93394b-62da-4d5f-b45e-bbdf3cc43580"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","3"}],SequenceForm[
+"Running simulation ",3],Editable -> False],StandardForm],"Print",ExpressionUUID -> "4a4e717e-574d-4559-afc5-99c2f9996836"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","4"}],SequenceForm[
+"Running simulation ",4],Editable -> False],StandardForm],"Print",ExpressionUUID -> "cd606599-8847-4f0f-8aea-ca29762833df"],Cell[
+BoxData[
+TemplateBox[{"Set","nosym","\"\\!\\(\\*TagBox[\\\"_\\\", Short[#1, 5] & ]\\) does not contain a symbol to attach a rule to.\"",2,11,2,34389931952440547402,"Local"},
+"MessageTemplate",BaseStyle -> "MSG"],StandardForm],"MSG","Message",ExpressionUUID -> "abd84ac7-4fa4-47e5-ad2e-3537ccf8c718"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","5"}],SequenceForm[
+"Running simulation ",5],Editable -> False],StandardForm],"Print",ExpressionUUID -> "883963e5-2820-486f-be15-bd27e32f3958"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","6"}],SequenceForm[
+"Running simulation ",6],Editable -> False],StandardForm],"Print",ExpressionUUID -> "362e2115-6ad3-46ee-82c8-e716e89976b0"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","7"}],SequenceForm[
+"Running simulation ",7],Editable -> False],StandardForm],"Print",ExpressionUUID -> "ecd69bdc-49d5-4aee-b813-79c8fb0408d2"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","8"}],SequenceForm[
+"Running simulation ",8],Editable -> False],StandardForm],"Print",ExpressionUUID -> "6d99489a-b260-4eb2-85cb-eee8f639bbdd"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","9"}],SequenceForm[
+"Running simulation ",9],Editable -> False],StandardForm],"Print",ExpressionUUID -> "8299ba89-88b3-429e-8ea9-4caee929542a"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","10"}],SequenceForm[
+"Running simulation ",10],Editable -> False],StandardForm],"Print",ExpressionUUID -> "84cf941f-8397-4768-9c54-3e84868d0372"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","11"}],SequenceForm[
+"Running simulation ",11],Editable -> False],StandardForm],"Print",ExpressionUUID -> "12e9e186-9421-4486-8971-d647af8639ec"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","12"}],SequenceForm[
+"Running simulation ",12],Editable -> False],StandardForm],"Print",ExpressionUUID -> "db8bdd0f-817a-45ef-b164-fb72746430ab"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","13"}],SequenceForm[
+"Running simulation ",13],Editable -> False],StandardForm],"Print",ExpressionUUID -> "2d4debe1-a452-42a2-aad3-fb885634009b"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","14"}],SequenceForm[
+"Running simulation ",14],Editable -> False],StandardForm],"Print",ExpressionUUID -> "fdf4a3b2-70fd-4a1a-b5c0-7cbc0085b3d6"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","15"}],SequenceForm[
+"Running simulation ",15],Editable -> False],StandardForm],"Print",ExpressionUUID -> "1d3b4c27-2eb4-4ae6-a479-e357674e16a4"],Cell[
+BoxData[
+TemplateBox[{"Set","nosym","\"\\!\\(\\*TagBox[\\\"_\\\", Short[#1, 5] & ]\\) does not contain a symbol to attach a rule to.\"",2,11,3,34389931952440547402,"Local"},
+"MessageTemplate",BaseStyle -> "MSG"],StandardForm],"MSG","Message",ExpressionUUID -> "5f179562-65ef-41ff-a86f-b51bde6e69cc"],Cell[
+BoxData[
+TemplateBox[{"General","stop","\"Further output of \\!\\(\\*TagBox[StyleBox[RowBox[{\\\"Set\\\", \\\"::\\\", \\\"nosym\\\"}], \\\"MessageName\\\"], Short[#1, 5] & ]\\) will be suppressed during this calculation.\"",2,11,4,34389931952440547402,"Local"},
+"MessageTemplate",BaseStyle -> "MSG"],StandardForm],"MSG","Message",ExpressionUUID -> "f40adcca-467e-4eb8-80ea-630436ef8b8c"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","16"}],SequenceForm[
+"Running simulation ",16],Editable -> False],StandardForm],"Print",ExpressionUUID -> "21abc258-cf0f-4781-ac68-d42d46d70bed"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","17"}],SequenceForm[
+"Running simulation ",17],Editable -> False],StandardForm],"Print",ExpressionUUID -> "679ce199-16fc-4fe6-8810-4e6651452619"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","18"}],SequenceForm[
+"Running simulation ",18],Editable -> False],StandardForm],"Print",ExpressionUUID -> "29c72ebc-cf7f-4d67-943f-47f5265a1fa8"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","19"}],SequenceForm[
+"Running simulation ",19],Editable -> False],StandardForm],"Print",ExpressionUUID -> "b12e33dd-75fa-47b8-b570-dd69287ccd19"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","20"}],SequenceForm[
+"Running simulation ",20],Editable -> False],StandardForm],"Print",ExpressionUUID -> "41533e83-f1bb-40db-ad9a-afb4d29cb80a"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","21"}],SequenceForm[
+"Running simulation ",21],Editable -> False],StandardForm],"Print",ExpressionUUID -> "3892e229-c657-4263-aa7e-1eea377bd334"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","22"}],SequenceForm[
+"Running simulation ",22],Editable -> False],StandardForm],"Print",ExpressionUUID -> "c9c691ed-fbb6-4f8e-ab30-d01028666694"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","23"}],SequenceForm[
+"Running simulation ",23],Editable -> False],StandardForm],"Print",ExpressionUUID -> "ef8bd260-6149-40ef-b0bd-b2738e5c5982"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","24"}],SequenceForm[
+"Running simulation ",24],Editable -> False],StandardForm],"Print",ExpressionUUID -> "367af27a-9864-48dd-93c9-4e3ac601e3b0"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","25"}],SequenceForm[
+"Running simulation ",25],Editable -> False],StandardForm],"Print",ExpressionUUID -> "3c288147-4db5-433d-b0b2-99d58bedc738"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","26"}],SequenceForm[
+"Running simulation ",26],Editable -> False],StandardForm],"Print",ExpressionUUID -> "a723d9e7-c816-40a3-8ad4-740cee19b93d"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","27"}],SequenceForm[
+"Running simulation ",27],Editable -> False],StandardForm],"Print",ExpressionUUID -> "f8a46a3b-7ec6-434b-b445-c99a6cb2bc46"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","28"}],SequenceForm[
+"Running simulation ",28],Editable -> False],StandardForm],"Print",ExpressionUUID -> "aea09608-9e9e-4c13-b4fb-d001ef9a0009"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","29"}],SequenceForm[
+"Running simulation ",29],Editable -> False],StandardForm],"Print",ExpressionUUID -> "35e75ec1-90cb-42f6-a45f-ed4b9e0beda8"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","30"}],SequenceForm[
+"Running simulation ",30],Editable -> False],StandardForm],"Print",ExpressionUUID -> "9b4749c6-607b-49a3-b38c-2b2aedc6916b"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","31"}],SequenceForm[
+"Running simulation ",31],Editable -> False],StandardForm],"Print",ExpressionUUID -> "315ca02b-56c9-4d14-83e4-2c3f827200d4"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","32"}],SequenceForm[
+"Running simulation ",32],Editable -> False],StandardForm],"Print",ExpressionUUID -> "874c2ea4-aaaf-4d04-a129-fcd47240fb65"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","33"}],SequenceForm[
+"Running simulation ",33],Editable -> False],StandardForm],"Print",ExpressionUUID -> "f75f15cf-ea7c-45fd-bafe-59b7c06e04bd"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","34"}],SequenceForm[
+"Running simulation ",34],Editable -> False],StandardForm],"Print",ExpressionUUID -> "1dc34215-8333-4e9e-ac3e-ddb0e3cf494a"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","35"}],SequenceForm[
+"Running simulation ",35],Editable -> False],StandardForm],"Print",ExpressionUUID -> "18b391da-a7ad-4e72-9fd9-5e8e5a97a948"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","36"}],SequenceForm[
+"Running simulation ",36],Editable -> False],StandardForm],"Print",ExpressionUUID -> "f3be2aef-9d3a-485d-9a4a-fc239a648ba8"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","37"}],SequenceForm[
+"Running simulation ",37],Editable -> False],StandardForm],"Print",ExpressionUUID -> "501f5a03-4397-4a4a-b584-695c14ba5efc"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","38"}],SequenceForm[
+"Running simulation ",38],Editable -> False],StandardForm],"Print",ExpressionUUID -> "ea08cc14-1e24-4cf6-aa54-a78ee46e54d9"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","39"}],SequenceForm[
+"Running simulation ",39],Editable -> False],StandardForm],"Print",ExpressionUUID -> "adb6c91e-067c-4ee4-b582-2c5e0b1da004"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","40"}],SequenceForm[
+"Running simulation ",40],Editable -> False],StandardForm],"Print",ExpressionUUID -> "2e487c92-57bb-4e96-bdec-4c8f513b23fa"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","41"}],SequenceForm[
+"Running simulation ",41],Editable -> False],StandardForm],"Print",ExpressionUUID -> "85df44f9-bac8-4322-90f2-04595cdbf847"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","42"}],SequenceForm[
+"Running simulation ",42],Editable -> False],StandardForm],"Print",ExpressionUUID -> "48b15658-cea7-406f-98e0-b0b6efea84c1"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","43"}],SequenceForm[
+"Running simulation ",43],Editable -> False],StandardForm],"Print",ExpressionUUID -> "2b248a3f-ce67-43d3-bd67-7002dcfba7d0"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","44"}],SequenceForm[
+"Running simulation ",44],Editable -> False],StandardForm],"Print",ExpressionUUID -> "47a14a97-cc4d-42f6-a3a6-e9b8d41ffac8"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","45"}],SequenceForm[
+"Running simulation ",45],Editable -> False],StandardForm],"Print",ExpressionUUID -> "7946706d-39da-4458-8d60-4748ceddce73"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","46"}],SequenceForm[
+"Running simulation ",46],Editable -> False],StandardForm],"Print",ExpressionUUID -> "bdced971-9a37-42fa-ade3-4d54a273b4c9"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","47"}],SequenceForm[
+"Running simulation ",47],Editable -> False],StandardForm],"Print",ExpressionUUID -> "ba01b17b-5403-49d1-a20d-d8a8b6b5a56c"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","48"}],SequenceForm[
+"Running simulation ",48],Editable -> False],StandardForm],"Print",ExpressionUUID -> "6b54ba10-b7be-4039-92f4-b362faaf3a59"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","49"}],SequenceForm[
+"Running simulation ",49],Editable -> False],StandardForm],"Print",ExpressionUUID -> "dd0bc313-19e9-4a39-a379-73b8a3f72825"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","50"}],SequenceForm[
+"Running simulation ",50],Editable -> False],StandardForm],"Print",ExpressionUUID -> "fb60076a-22d8-4bf3-af9e-658422a8da3b"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","51"}],SequenceForm[
+"Running simulation ",51],Editable -> False],StandardForm],"Print",ExpressionUUID -> "ca8e5cd8-3d4e-4907-9b5d-cdee83c358af"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","52"}],SequenceForm[
+"Running simulation ",52],Editable -> False],StandardForm],"Print",ExpressionUUID -> "9fc6452c-99c0-4534-8b21-604376bd136c"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","53"}],SequenceForm[
+"Running simulation ",53],Editable -> False],StandardForm],"Print",ExpressionUUID -> "9076c09f-ede2-44a6-83e3-911ee16df971"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","54"}],SequenceForm[
+"Running simulation ",54],Editable -> False],StandardForm],"Print",ExpressionUUID -> "e578de28-5d15-433c-992e-402f24f799df"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","55"}],SequenceForm[
+"Running simulation ",55],Editable -> False],StandardForm],"Print",ExpressionUUID -> "ef4504f4-f82e-4b53-84fe-6ab246a59fd7"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","56"}],SequenceForm[
+"Running simulation ",56],Editable -> False],StandardForm],"Print",ExpressionUUID -> "7f477ce9-20f9-477d-bc9c-b642febba587"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","57"}],SequenceForm[
+"Running simulation ",57],Editable -> False],StandardForm],"Print",ExpressionUUID -> "9e647050-340e-415a-827d-8192627fea17"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","58"}],SequenceForm[
+"Running simulation ",58],Editable -> False],StandardForm],"Print",ExpressionUUID -> "a1874401-c6b0-4a89-8a6e-ce75635efa35"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","59"}],SequenceForm[
+"Running simulation ",59],Editable -> False],StandardForm],"Print",ExpressionUUID -> "8b4209cf-4828-44c0-8eca-cce796c88bbe"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","60"}],SequenceForm[
+"Running simulation ",60],Editable -> False],StandardForm],"Print",ExpressionUUID -> "b7c2f099-f765-4fea-b5b6-e665a79ded7b"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","61"}],SequenceForm[
+"Running simulation ",61],Editable -> False],StandardForm],"Print",ExpressionUUID -> "197235de-021a-462e-9afc-5793a1337c72"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","62"}],SequenceForm[
+"Running simulation ",62],Editable -> False],StandardForm],"Print",ExpressionUUID -> "d44af3c5-57b4-4bb3-8af0-e836a0df02e3"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","63"}],SequenceForm[
+"Running simulation ",63],Editable -> False],StandardForm],"Print",ExpressionUUID -> "6f48dcc1-2e63-438f-a0bd-b320ab3c1c90"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","64"}],SequenceForm[
+"Running simulation ",64],Editable -> False],StandardForm],"Print",ExpressionUUID -> "b3cc9aee-7760-4768-9a7d-046e6f628b59"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","65"}],SequenceForm[
+"Running simulation ",65],Editable -> False],StandardForm],"Print",ExpressionUUID -> "706ad995-0a5a-40f7-9f19-d41315902fb8"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","66"}],SequenceForm[
+"Running simulation ",66],Editable -> False],StandardForm],"Print",ExpressionUUID -> "cffaa33e-8e45-47fe-a7e1-a192333db3dc"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","67"}],SequenceForm[
+"Running simulation ",67],Editable -> False],StandardForm],"Print",ExpressionUUID -> "a930e032-c810-4c62-88bc-41ad1b16ab27"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","68"}],SequenceForm[
+"Running simulation ",68],Editable -> False],StandardForm],"Print",ExpressionUUID -> "5f745101-a4dc-4175-9aed-be53edd44875"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","69"}],SequenceForm[
+"Running simulation ",69],Editable -> False],StandardForm],"Print",ExpressionUUID -> "b104fd44-9a57-4d6f-9647-a3aa92897899"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","70"}],SequenceForm[
+"Running simulation ",70],Editable -> False],StandardForm],"Print",ExpressionUUID -> "104f968f-d42b-4b3b-a16e-55b95c84e1fe"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","71"}],SequenceForm[
+"Running simulation ",71],Editable -> False],StandardForm],"Print",ExpressionUUID -> "e6e20200-cce7-4779-8d6f-1102d0260dc7"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","72"}],SequenceForm[
+"Running simulation ",72],Editable -> False],StandardForm],"Print",ExpressionUUID -> "1730c017-6573-40c9-89e8-6c3cefa2100b"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","73"}],SequenceForm[
+"Running simulation ",73],Editable -> False],StandardForm],"Print",ExpressionUUID -> "1daf403d-d5f0-4569-bec2-ba3be9f5913f"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","74"}],SequenceForm[
+"Running simulation ",74],Editable -> False],StandardForm],"Print",ExpressionUUID -> "5e288c75-80bd-4341-8409-ca63811007da"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","75"}],SequenceForm[
+"Running simulation ",75],Editable -> False],StandardForm],"Print",ExpressionUUID -> "ceba0b3b-5e4d-4cd2-b48f-243096f0de0e"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","76"}],SequenceForm[
+"Running simulation ",76],Editable -> False],StandardForm],"Print",ExpressionUUID -> "9073d635-ded3-4dac-8e0f-5c740a219a63"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","77"}],SequenceForm[
+"Running simulation ",77],Editable -> False],StandardForm],"Print",ExpressionUUID -> "1b84b460-8c1f-48f0-840d-0f687d18f868"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","78"}],SequenceForm[
+"Running simulation ",78],Editable -> False],StandardForm],"Print",ExpressionUUID -> "b30b8ce7-31c6-4d4c-b371-aafbc2962c09"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","79"}],SequenceForm[
+"Running simulation ",79],Editable -> False],StandardForm],"Print",ExpressionUUID -> "117ee691-1931-4239-9479-28a5d858dfe8"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","80"}],SequenceForm[
+"Running simulation ",80],Editable -> False],StandardForm],"Print",ExpressionUUID -> "d6239c8f-3253-4e40-bee1-794348af8eae"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","81"}],SequenceForm[
+"Running simulation ",81],Editable -> False],StandardForm],"Print",ExpressionUUID -> "563b4389-6406-4c1a-90e2-72a76112ef46"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","82"}],SequenceForm[
+"Running simulation ",82],Editable -> False],StandardForm],"Print",ExpressionUUID -> "adb302a7-fda3-46ca-a874-8c4066e469aa"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","83"}],SequenceForm[
+"Running simulation ",83],Editable -> False],StandardForm],"Print",ExpressionUUID -> "bf3dc818-8c2d-4765-8f58-5d3989066b71"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","84"}],SequenceForm[
+"Running simulation ",84],Editable -> False],StandardForm],"Print",ExpressionUUID -> "bf7dcec6-fd27-43cd-b2d5-27416dd9701a"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","85"}],SequenceForm[
+"Running simulation ",85],Editable -> False],StandardForm],"Print",ExpressionUUID -> "4d3152c3-f55a-4245-978c-9079db658132"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","86"}],SequenceForm[
+"Running simulation ",86],Editable -> False],StandardForm],"Print",ExpressionUUID -> "e5a66ce0-a2e1-47fd-95d4-cc4e02123632"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","87"}],SequenceForm[
+"Running simulation ",87],Editable -> False],StandardForm],"Print",ExpressionUUID -> "6b2c3687-59b8-4f9d-9a0a-fb134353218d"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","88"}],SequenceForm[
+"Running simulation ",88],Editable -> False],StandardForm],"Print",ExpressionUUID -> "a8809404-20a6-4f93-9886-9b2dc017d813"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","89"}],SequenceForm[
+"Running simulation ",89],Editable -> False],StandardForm],"Print",ExpressionUUID -> "24b7ba60-f928-462d-9d5c-ee1a7feb67af"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","90"}],SequenceForm[
+"Running simulation ",90],Editable -> False],StandardForm],"Print",ExpressionUUID -> "aba76e02-b692-4969-b5c2-cb49bbec51f3"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","91"}],SequenceForm[
+"Running simulation ",91],Editable -> False],StandardForm],"Print",ExpressionUUID -> "603d148c-dddb-4510-abb9-86864998280d"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","92"}],SequenceForm[
+"Running simulation ",92],Editable -> False],StandardForm],"Print",ExpressionUUID -> "d5280c2a-6227-4d2b-b97d-d981556d12cc"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","93"}],SequenceForm[
+"Running simulation ",93],Editable -> False],StandardForm],"Print",ExpressionUUID -> "c8a18e2e-2196-4457-9688-57095926c79a"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","94"}],SequenceForm[
+"Running simulation ",94],Editable -> False],StandardForm],"Print",ExpressionUUID -> "f508fc4e-7511-4fdf-91a6-b223bf292650"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","95"}],SequenceForm[
+"Running simulation ",95],Editable -> False],StandardForm],"Print",ExpressionUUID -> "74b82258-9a9d-4dff-9509-080cf98d723a"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","96"}],SequenceForm[
+"Running simulation ",96],Editable -> False],StandardForm],"Print",ExpressionUUID -> "75a021b2-fd80-42cd-9a74-fe2f77824711"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","97"}],SequenceForm[
+"Running simulation ",97],Editable -> False],StandardForm],"Print",ExpressionUUID -> "b062d553-e383-4579-8df6-3148ca727d09"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","98"}],SequenceForm[
+"Running simulation ",98],Editable -> False],StandardForm],"Print",ExpressionUUID -> "02e1c439-d0f1-4cf7-87b5-448e63594fd8"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","99"}],SequenceForm[
+"Running simulation ",99],Editable -> False],StandardForm],"Print",ExpressionUUID -> "219f5a25-f5dd-4a62-9c24-23e4f9a036cf"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Running simulation \"","\[InvisibleSpace]","100"}],SequenceForm[
+"Running simulation ",100],Editable -> False],StandardForm],"Print",ExpressionUUID -> "04b6880d-0e4d-4ed3-aebf-cd2cb291ed84"],Cell[
+BoxData[
+TagBox[TagBox[DynamicModuleBox[{Set[TypeSystem`NestedGrid`PackagePrivate`$state$$,
+Association["InitialData" -> {Association["Simulation" -> 1,"RuinStep" -> 264,"FinalHuman" -> 0,
+"FinalAI" -> 100,"Alpha" -> -13.33664216743068`,"Beta" -> 0.15936642167430679`,"Delta" -> 0.1493664216743068`,
+"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association["Simulation" -> 2,"RuinStep" -> 118,
+"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA","Delta" -> "NA",
+"Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 3,"RuinStep" -> 28,
+"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA","Delta" -> "NA",
+"Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 4,"RuinStep" -> 290,
+"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -9.429156898728326`,"Beta" -> 0.12029156898728327`,
+"Delta" -> 0.11029156898728326`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 5,"RuinStep" -> 500,"FinalHuman" -> 20,"FinalAI" -> 80,"Alpha" -> "NA",
+"Beta" -> "NA","Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 6,
+"RuinStep" -> 32,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 7,
+"RuinStep" -> 30,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 8,
+"RuinStep" -> 100,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 9,
+"RuinStep" -> 38,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 10,
+"RuinStep" -> 92,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 11,
+"RuinStep" -> 500,"FinalHuman" -> 34,"FinalAI" -> 66,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 12,
+"RuinStep" -> 96,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 13,
+"RuinStep" -> 182,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 14,
+"RuinStep" -> 66,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 15,
+"RuinStep" -> 208,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -11.644564570156945`,
+"Beta" -> 0.14244564570156945`,"Delta" -> 0.13244564570156944`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 16,"RuinStep" -> 500,"FinalHuman" -> 18,"FinalAI" -> 82,"Alpha" -> "NA",
+"Beta" -> "NA","Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 17,
+"RuinStep" -> 28,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 18,
+"RuinStep" -> 182,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 19,
+"RuinStep" -> 320,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -10.650147885576704`,
+"Beta" -> 0.13250147885576705`,"Delta" -> 0.12250147885576704`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 20,"RuinStep" -> 248,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -7.553952054263021`,
+"Beta" -> 0.10153952054263021`,"Delta" -> 0.0915395205426302`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 21,"RuinStep" -> 500,"FinalHuman" -> 8,"FinalAI" -> 92,"Alpha" -> "NA",
+"Beta" -> "NA","Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 22,
+"RuinStep" -> 30,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 23,
+"RuinStep" -> 500,"FinalHuman" -> 24,"FinalAI" -> 76,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 24,
+"RuinStep" -> 500,"FinalHuman" -> 30,"FinalAI" -> 70,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 25,
+"RuinStep" -> 500,"FinalHuman" -> 14,"FinalAI" -> 86,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 26,
+"RuinStep" -> 20,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 27,
+"RuinStep" -> 60,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 28,
+"RuinStep" -> 54,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 29,
+"RuinStep" -> 500,"FinalHuman" -> 26,"FinalAI" -> 74,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 30,
+"RuinStep" -> 26,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 31,
+"RuinStep" -> 100,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 32,
+"RuinStep" -> 86,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 33,
+"RuinStep" -> 184,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 34,
+"RuinStep" -> 500,"FinalHuman" -> 32,"FinalAI" -> 68,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 35,
+"RuinStep" -> 52,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 36,
+"RuinStep" -> 78,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 37,
+"RuinStep" -> 158,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 38,
+"RuinStep" -> 82,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 39,
+"RuinStep" -> 92,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 40,
+"RuinStep" -> 160,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 41,
+"RuinStep" -> 106,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 42,
+"RuinStep" -> 500,"FinalHuman" -> 26,"FinalAI" -> 74,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 43,
+"RuinStep" -> 302,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -5.442043842382061`,
+"Beta" -> 0.08042043842382061`,"Delta" -> 0.0704204384238206`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 44,"RuinStep" -> 24,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA",
+"Beta" -> "NA","Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 45,
+"RuinStep" -> 178,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 46,
+"RuinStep" -> 500,"FinalHuman" -> 28,"FinalAI" -> 72,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 47,
+"RuinStep" -> 500,"FinalHuman" -> 26,"FinalAI" -> 74,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 48,
+"RuinStep" -> 50,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 49,
+"RuinStep" -> 284,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -11.821702003628186`,
+"Beta" -> 0.14421702003628187`,"Delta" -> 0.13421702003628186`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 50,"RuinStep" -> 206,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -13.333504450848833`,
+"Beta" -> 0.15933504450848832`,"Delta" -> 0.14933504450848833`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 51,"RuinStep" -> 308,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -4.5559182437035055`,
+"Beta" -> 0.07155918243703506`,"Delta" -> 0.06155918243703506`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 52,"RuinStep" -> 500,"FinalHuman" -> 20,"FinalAI" -> 80,"Alpha" -> "NA",
+"Beta" -> "NA","Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 53,
+"RuinStep" -> 84,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 54,
+"RuinStep" -> 500,"FinalHuman" -> 22,"FinalAI" -> 78,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 55,
+"RuinStep" -> 34,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 56,
+"RuinStep" -> 94,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 57,
+"RuinStep" -> 332,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -7.011730420417669`,
+"Beta" -> 0.09611730420417669`,"Delta" -> 0.08611730420417668`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 58,"RuinStep" -> 38,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA",
+"Beta" -> "NA","Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 59,
+"RuinStep" -> 196,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 60,
+"RuinStep" -> 24,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 61,
+"RuinStep" -> 74,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 62,
+"RuinStep" -> 176,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 63,
+"RuinStep" -> 228,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -12.546165109242347`,
+"Beta" -> 0.15146165109242346`,"Delta" -> 0.14146165109242348`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 64,"RuinStep" -> 164,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA",
+"Beta" -> "NA","Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 65,
+"RuinStep" -> 188,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 66,
+"RuinStep" -> 168,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 67,
+"RuinStep" -> 54,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 68,
+"RuinStep" -> 68,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 69,
+"RuinStep" -> 500,"FinalHuman" -> 12,"FinalAI" -> 88,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 70,
+"RuinStep" -> 500,"FinalHuman" -> 34,"FinalAI" -> 66,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 71,
+"RuinStep" -> 460,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -11.270956690189196`,
+"Beta" -> 0.13870956690189196`,"Delta" -> 0.12870956690189195`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 72,"RuinStep" -> 500,"FinalHuman" -> 34,"FinalAI" -> 66,"Alpha" -> "NA",
+"Beta" -> "NA","Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 73,
+"RuinStep" -> 56,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 74,
+"RuinStep" -> 132,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 75,
+"RuinStep" -> 238,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -7.308130994002706`,
+"Beta" -> 0.09908130994002706`,"Delta" -> 0.08908130994002705`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 76,"RuinStep" -> 106,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA",
+"Beta" -> "NA","Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 77,
+"RuinStep" -> 80,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 78,
+"RuinStep" -> 16,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 79,
+"RuinStep" -> 54,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 80,
+"RuinStep" -> 472,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -6.067356121621396`,
+"Beta" -> 0.08667356121621396`,"Delta" -> 0.07667356121621395`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 81,"RuinStep" -> 210,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -13.45643255299447`,
+"Beta" -> 0.16056432552994468`,"Delta" -> 0.1505643255299447`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 82,"RuinStep" -> 34,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA",
+"Beta" -> "NA","Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 83,
+"RuinStep" -> 62,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 84,
+"RuinStep" -> 78,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 85,
+"RuinStep" -> 148,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 86,
+"RuinStep" -> 130,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 87,
+"RuinStep" -> 486,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -6.141847160423612`,
+"Beta" -> 0.08741847160423612`,"Delta" -> 0.07741847160423611`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 88,"RuinStep" -> 50,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA",
+"Beta" -> "NA","Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 89,
+"RuinStep" -> 500,"FinalHuman" -> 22,"FinalAI" -> 78,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 90,
+"RuinStep" -> 174,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 91,
+"RuinStep" -> 108,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 92,
+"RuinStep" -> 500,"FinalHuman" -> 10,"FinalAI" -> 90,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 93,
+"RuinStep" -> 242,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> -11.024903016368803`,
+"Beta" -> 0.13624903016368803`,"Delta" -> 0.12624903016368802`,"Gamma" -> 0.5`,"Outcome" -> "extinction"],Association[
+"Simulation" -> 94,"RuinStep" -> 88,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA",
+"Beta" -> "NA","Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 95,
+"RuinStep" -> 500,"FinalHuman" -> 20,"FinalAI" -> 80,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 96,
+"RuinStep" -> 116,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 97,
+"RuinStep" -> 500,"FinalHuman" -> 12,"FinalAI" -> 88,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 98,
+"RuinStep" -> 500,"FinalHuman" -> 8,"FinalAI" -> 92,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 99,
+"RuinStep" -> 40,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"],Association["Simulation" -> 100,
+"RuinStep" -> 146,"FinalHuman" -> 0,"FinalAI" -> 100,"Alpha" -> "NA","Beta" -> "NA",
+"Delta" -> "NA","Gamma" -> "NA","Outcome" -> "none"]},"AllowEmbedding" -> True,"InitialShape" -> TypeSystem`PackageScope`HeaderShape[
+Association[{All,"Simulation"} -> 1,{All,"RuinStep"} -> 1,{All,"FinalHuman"} -> 1,
+{All,"FinalAI"} -> 1,{All,"Alpha"} -> 1,{All,"Beta"} -> 1,{All,"Delta"} -> 1,{All,"Gamma"} -> 1,
+{All,"Outcome"} -> 1],TypeSystem`PackageScope`Limited[TypeSystem`PackageScope`ColumnShape[
+TypeSystem`PackageScope`Limited[TypeSystem`PackageScope`RowShape[Association["Simulation" -> TypeSystem`PackageScope`AtomShape[
+34],"RuinStep" -> TypeSystem`PackageScope`AtomShape[34],"FinalHuman" -> TypeSystem`PackageScope`AtomShape[
+34],"FinalAI" -> TypeSystem`PackageScope`AtomShape[34],"Alpha" -> TypeSystem`PackageScope`UnknownShape[
+False],"Beta" -> TypeSystem`PackageScope`UnknownShape[False],"Delta" -> TypeSystem`PackageScope`UnknownShape[
+False],"Gamma" -> TypeSystem`PackageScope`UnknownShape[False],"Outcome" -> TypeSystem`PackageScope`AtomShape[
+105.`]]],DirectedInfinity[1],9,{All}]],20,DirectedInfinity[1],{}]],"InitialType" -> TypeSystem`Vector[
+TypeSystem`Struct[{"Simulation","RuinStep","FinalHuman","FinalAI","Alpha","Beta","Delta","Gamma","Outcome"},
+{TypeSystem`Atom[Integer],TypeSystem`Atom[Integer],TypeSystem`Atom[Integer],TypeSystem`Atom[
+Integer],TypeSystem`AnyType,TypeSystem`AnyType,TypeSystem`AnyType,TypeSystem`AnyType,TypeSystem`Atom[
+TypeSystem`Enumeration["extinction","none"]]}],100],"Meta" -> Association[],"RowTarget" -> 20,
+"ColumnTarget" -> 10,"Shape" -> TypeSystem`PackageScope`HeaderShape[Association[{All,"Simulation"} -> 1,
+{All,"RuinStep"} -> 1,{All,"FinalHuman"} -> 1,{All,"FinalAI"} -> 1,{All,"Alpha"} -> 1,
+{All,"Beta"} -> 1,{All,"Delta"} -> 1,{All,"Gamma"} -> 1,{All,"Outcome"} -> 1],TypeSystem`PackageScope`Limited[
+TypeSystem`PackageScope`ColumnShape[TypeSystem`PackageScope`Limited[TypeSystem`PackageScope`RowShape[
+Association["Simulation" -> TypeSystem`PackageScope`AtomShape[34],"RuinStep" -> TypeSystem`PackageScope`AtomShape[
+34],"FinalHuman" -> TypeSystem`PackageScope`AtomShape[34],"FinalAI" -> TypeSystem`PackageScope`AtomShape[
+34],"Alpha" -> TypeSystem`PackageScope`UnknownShape[False],"Beta" -> TypeSystem`PackageScope`UnknownShape[
+False],"Delta" -> TypeSystem`PackageScope`UnknownShape[False],"Gamma" -> TypeSystem`PackageScope`UnknownShape[
+False],"Outcome" -> TypeSystem`PackageScope`AtomShape[105.`]]],DirectedInfinity[1],
+9,{All}]],20,DirectedInfinity[1],{}]],"Type" -> TypeSystem`Vector[TypeSystem`Struct[
+{"Simulation","RuinStep","FinalHuman","FinalAI","Alpha","Beta","Delta","Gamma","Outcome"},
+{TypeSystem`Atom[Integer],TypeSystem`Atom[Integer],TypeSystem`Atom[Integer],TypeSystem`Atom[
+Integer],TypeSystem`AnyType,TypeSystem`AnyType,TypeSystem`AnyType,TypeSystem`AnyType,TypeSystem`Atom[
+TypeSystem`Enumeration["extinction","none"]]}],100],"Path" -> {},"DisplayedRowCount" -> 20,
+"DisplayedColumnCount" -> 9,"DataRowCount" -> 100,"DataColumnCount" -> 9,"SortPaths" -> {},
+"SortDirections" -> {},"HiddenItemsMap" -> Null,"UpdateType" -> 1]],TypeSystem`NestedGrid`PackagePrivate`$outputID$$,Set[
+TypeSystem`NestedGrid`PackagePrivate`$path$$,{}],Set[TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+1],Set[TypeSystem`NestedGrid`PackagePrivate`$hPos$$,1],Set[TypeSystem`NestedGrid`PackagePrivate`$grid$$,
+DynamicModule[{Set[TypeSystem`NestedGrid`PackagePrivate`renderedGrid,Deploy[Style[
+Grid[{{Item[Pane[Tooltip[EventHandler[MouseAppearance[Mouseover["Simulation",Style[
+"Simulation",FontColor -> RGBColor[0.27450980392156865`,0.5372549019607843`,0.792156862745098`]]],
+"LinkHand"],RuleDelayed[{"MouseClicked",1},TypeSystem`NestedGrid`PackagePrivate`updateState[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,
+TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]][
+{All,"Simulation"},1]]],Row[{Row[{Style["All",GrayLevel[0.6`]]}],Row[{Style[" \:203a ",
+RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style["Simulation",
+GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+ImageSize -> {{1,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],Background -> GrayLevel[
+0.95`],Alignment -> {Left,Baseline}],Item[Pane[Tooltip[EventHandler[MouseAppearance[
+Mouseover["RuinStep",Style["RuinStep",FontColor -> RGBColor[0.27450980392156865`,
+0.5372549019607843`,0.792156862745098`]]],"LinkHand"],RuleDelayed[{"MouseClicked",1},
+TypeSystem`NestedGrid`PackagePrivate`updateState[TypeSystem`NestedGrid`PackagePrivate`$state$$,
+TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]][{All,"RuinStep"},1]]],Row[{Row[
+{Style["All",GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+ImageSize -> {{1,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],Background -> GrayLevel[
+0.95`],Alignment -> {Left,Baseline}],Item[Pane[Tooltip[EventHandler[MouseAppearance[
+Mouseover["FinalHuman",Style["FinalHuman",FontColor -> RGBColor[0.27450980392156865`,
+0.5372549019607843`,0.792156862745098`]]],"LinkHand"],RuleDelayed[{"MouseClicked",1},
+TypeSystem`NestedGrid`PackagePrivate`updateState[TypeSystem`NestedGrid`PackagePrivate`$state$$,
+TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]][{All,"FinalHuman"},1]]],Row[{Row[
+{Style["All",GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalHuman",GrayLevel[0.6`]]}]},
+BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],ImageSize -> {{1,Full},Automatic},
+ImageMargins -> {{5,3},{4,5}}],Background -> GrayLevel[0.95`],Alignment -> {Left,Baseline}],Item[
+Pane[Tooltip[EventHandler[MouseAppearance[Mouseover["FinalAI",Style["FinalAI",FontColor -> RGBColor[
+0.27450980392156865`,0.5372549019607843`,0.792156862745098`]]],"LinkHand"],RuleDelayed[
+{"MouseClicked",1},TypeSystem`NestedGrid`PackagePrivate`updateState[TypeSystem`NestedGrid`PackagePrivate`$state$$,
+TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]][{All,"FinalAI"},1]]],Row[{Row[
+{Style["All",GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+ImageSize -> {{1,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],Background -> GrayLevel[
+0.95`],Alignment -> {Left,Baseline}],Item[Pane[Tooltip[EventHandler[MouseAppearance[
+Mouseover["Alpha",Style["Alpha",FontColor -> RGBColor[0.27450980392156865`,0.5372549019607843`,
+0.792156862745098`]]],"LinkHand"],RuleDelayed[{"MouseClicked",1},TypeSystem`NestedGrid`PackagePrivate`updateState[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,
+TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]][
+{All,"Alpha"},1]]],Row[{Row[{Style["All",GrayLevel[0.6`]]}],Row[{Style[" \:203a ",
+RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style["Alpha",
+GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+ImageSize -> {{1,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],Background -> GrayLevel[
+0.95`],Alignment -> {Left,Baseline}],Item[Pane[Tooltip[EventHandler[MouseAppearance[
+Mouseover["Beta",Style["Beta",FontColor -> RGBColor[0.27450980392156865`,0.5372549019607843`,
+0.792156862745098`]]],"LinkHand"],RuleDelayed[{"MouseClicked",1},TypeSystem`NestedGrid`PackagePrivate`updateState[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,
+TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]][
+{All,"Beta"},1]]],Row[{Row[{Style["All",GrayLevel[0.6`]]}],Row[{Style[" \:203a ",
+RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style["Beta",
+GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+ImageSize -> {{1,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],Background -> GrayLevel[
+0.95`],Alignment -> {Left,Baseline}],Item[Pane[Tooltip[EventHandler[MouseAppearance[
+Mouseover["Delta",Style["Delta",FontColor -> RGBColor[0.27450980392156865`,0.5372549019607843`,
+0.792156862745098`]]],"LinkHand"],RuleDelayed[{"MouseClicked",1},TypeSystem`NestedGrid`PackagePrivate`updateState[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,
+TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]][
+{All,"Delta"},1]]],Row[{Row[{Style["All",GrayLevel[0.6`]]}],Row[{Style[" \:203a ",
+RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style["Delta",
+GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+ImageSize -> {{1,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],Background -> GrayLevel[
+0.95`],Alignment -> {Left,Baseline}],Item[Pane[Tooltip[EventHandler[MouseAppearance[
+Mouseover["Gamma",Style["Gamma",FontColor -> RGBColor[0.27450980392156865`,0.5372549019607843`,
+0.792156862745098`]]],"LinkHand"],RuleDelayed[{"MouseClicked",1},TypeSystem`NestedGrid`PackagePrivate`updateState[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,
+TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]][
+{All,"Gamma"},1]]],Row[{Row[{Style["All",GrayLevel[0.6`]]}],Row[{Style[" \:203a ",
+RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style["Gamma",
+GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+ImageSize -> {{1,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],Background -> GrayLevel[
+0.95`],Alignment -> {Left,Baseline}],Item[Pane[Tooltip[EventHandler[MouseAppearance[
+Mouseover["Outcome",Style["Outcome",FontColor -> RGBColor[0.27450980392156865`,0.5372549019607843`,
+0.792156862745098`]]],"LinkHand"],RuleDelayed[{"MouseClicked",1},TypeSystem`NestedGrid`PackagePrivate`updateState[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,
+TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]][
+{All,"Outcome"},1]]],Row[{Row[{Style["All",GrayLevel[0.6`]]}],Row[{Style[" \:203a ",
+RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style["Outcome",
+GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+ImageSize -> {{1,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],Background -> GrayLevel[
+0.95`],Alignment -> {Left,Baseline}]},{Item[Pane[Annotation[Tooltip[RawBoxes["1"],
+Row[{Row[{Style[RawBoxes["1"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Simulation",GrayLevel[0.6`]]}]},
+BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][
+{1,Key["Simulation"]},"Item",False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["264"],Row[{Row[
+{Style[RawBoxes["1"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{1,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["1"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{1,Key["FinalHuman"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[{Style[RawBoxes["1"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{1,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["-13.3366"],Row[{Row[{Style[RawBoxes["1"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{1,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.159366"],Row[{Row[{Style[RawBoxes["1"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{1,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.149366"],Row[{Row[{Style[RawBoxes["1"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{1,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.5"],Row[{Row[{Style[RawBoxes["1"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{1,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["extinction",Row[{Row[{Style[RawBoxes["1"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{1,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["2"],Row[{Row[{Style[RawBoxes["2"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{2,Key["Simulation"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["118"],Row[{Row[{Style[RawBoxes["2"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{2,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["2"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{2,Key["FinalHuman"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[{Style[RawBoxes["2"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{2,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["2"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{2,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"2"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{2,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"2"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{2,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"2"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{2,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["2"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{2,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["3"],Row[{Row[{Style[RawBoxes["3"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{3,Key["Simulation"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["28"],Row[{Row[{Style[RawBoxes["3"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{3,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["3"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{3,Key["FinalHuman"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[{Style[RawBoxes["3"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{3,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["3"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{3,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"3"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{3,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"3"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{3,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"3"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{3,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["3"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{3,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["4"],Row[{Row[{Style[RawBoxes["4"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{4,Key["Simulation"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["290"],Row[{Row[{Style[RawBoxes["4"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{4,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["4"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{4,Key["FinalHuman"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[{Style[RawBoxes["4"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{4,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["-9.42916"],Row[{Row[{Style[RawBoxes["4"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{4,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.120292"],Row[{Row[{Style[RawBoxes["4"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{4,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.110292"],Row[{Row[{Style[RawBoxes["4"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{4,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.5"],Row[{Row[{Style[RawBoxes["4"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{4,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["extinction",Row[{Row[{Style[RawBoxes["4"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{4,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["5"],Row[{Row[{Style[RawBoxes["5"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{5,Key["Simulation"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["500"],Row[{Row[{Style[RawBoxes["5"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{5,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["20"],Row[{Row[{Style[RawBoxes["5"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{5,Key["FinalHuman"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["80"],Row[{Row[{Style[RawBoxes["5"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{5,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["5"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{5,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"5"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{5,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"5"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{5,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"5"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{5,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["5"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{5,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["6"],Row[{Row[{Style[RawBoxes["6"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{6,Key["Simulation"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["32"],Row[{Row[{Style[RawBoxes["6"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{6,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["6"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{6,Key["FinalHuman"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[{Style[RawBoxes["6"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{6,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["6"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{6,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"6"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{6,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"6"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{6,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"6"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{6,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["6"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{6,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["7"],Row[{Row[{Style[RawBoxes["7"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{7,Key["Simulation"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["30"],Row[{Row[{Style[RawBoxes["7"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{7,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["7"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{7,Key["FinalHuman"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[{Style[RawBoxes["7"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{7,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["7"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{7,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"7"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{7,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"7"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{7,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"7"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{7,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["7"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{7,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["8"],Row[{Row[{Style[RawBoxes["8"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{8,Key["Simulation"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[{Style[RawBoxes["8"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{8,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["8"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{8,Key["FinalHuman"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[{Style[RawBoxes["8"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{8,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["8"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{8,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"8"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{8,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"8"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{8,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"8"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{8,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["8"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{8,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["9"],Row[{Row[{Style[RawBoxes["9"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{9,Key["Simulation"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["38"],Row[{Row[{Style[RawBoxes["9"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{9,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["9"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{9,Key["FinalHuman"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[{Style[RawBoxes["9"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{9,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["9"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{9,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"9"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{9,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"9"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{9,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"9"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{9,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["9"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{9,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["10"],Row[{Row[{Style[RawBoxes["10"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{10,Key["Simulation"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["92"],Row[{Row[
+{Style[RawBoxes["10"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{10,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["10"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{10,Key["FinalHuman"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[
+{Style[RawBoxes["10"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{10,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["10"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{10,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"10"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{10,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"10"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{10,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"10"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{10,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["10"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{10,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["11"],Row[{Row[{Style[RawBoxes["11"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{11,Key["Simulation"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["500"],Row[{Row[
+{Style[RawBoxes["11"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{11,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["34"],Row[{Row[{Style[RawBoxes["11"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{11,Key["FinalHuman"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["66"],Row[{Row[
+{Style[RawBoxes["11"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{11,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["11"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{11,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"11"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{11,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"11"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{11,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"11"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{11,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["11"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{11,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["12"],Row[{Row[{Style[RawBoxes["12"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{12,Key["Simulation"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["96"],Row[{Row[
+{Style[RawBoxes["12"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{12,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["12"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{12,Key["FinalHuman"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[
+{Style[RawBoxes["12"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{12,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["12"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{12,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"12"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{12,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"12"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{12,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"12"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{12,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["12"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{12,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["13"],Row[{Row[{Style[RawBoxes["13"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{13,Key["Simulation"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["182"],Row[{Row[
+{Style[RawBoxes["13"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{13,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["13"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{13,Key["FinalHuman"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[
+{Style[RawBoxes["13"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{13,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["13"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{13,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"13"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{13,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"13"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{13,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"13"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{13,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["13"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{13,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["14"],Row[{Row[{Style[RawBoxes["14"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{14,Key["Simulation"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["66"],Row[{Row[
+{Style[RawBoxes["14"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{14,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["14"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{14,Key["FinalHuman"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[
+{Style[RawBoxes["14"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{14,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["14"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{14,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"14"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{14,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"14"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{14,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"14"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{14,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["14"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{14,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["15"],Row[{Row[{Style[RawBoxes["15"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{15,Key["Simulation"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["208"],Row[{Row[
+{Style[RawBoxes["15"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{15,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["15"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{15,Key["FinalHuman"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[
+{Style[RawBoxes["15"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{15,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["-11.6446"],Row[{Row[{Style[RawBoxes["15"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{15,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.142446"],Row[{Row[{Style[RawBoxes["15"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{15,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.132446"],Row[{Row[{Style[RawBoxes["15"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{15,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.5"],Row[{Row[{Style[RawBoxes["15"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{15,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["extinction",Row[{Row[{Style[RawBoxes["15"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{15,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["16"],Row[{Row[{Style[RawBoxes["16"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{16,Key["Simulation"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["500"],Row[{Row[
+{Style[RawBoxes["16"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{16,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["18"],Row[{Row[{Style[RawBoxes["16"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{16,Key["FinalHuman"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["82"],Row[{Row[
+{Style[RawBoxes["16"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{16,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["16"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{16,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"16"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{16,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"16"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{16,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"16"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{16,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["16"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{16,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["17"],Row[{Row[{Style[RawBoxes["17"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{17,Key["Simulation"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["28"],Row[{Row[
+{Style[RawBoxes["17"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{17,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["17"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{17,Key["FinalHuman"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[
+{Style[RawBoxes["17"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{17,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["17"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{17,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"17"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{17,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"17"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{17,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"17"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{17,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["17"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{17,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["18"],Row[{Row[{Style[RawBoxes["18"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{18,Key["Simulation"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["182"],Row[{Row[
+{Style[RawBoxes["18"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{18,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["18"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{18,Key["FinalHuman"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[
+{Style[RawBoxes["18"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{18,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes["18"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{18,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"18"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{18,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"18"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{18,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["NA",Row[{Row[{Style[RawBoxes[
+"18"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,
+0.6509803921568628`]],Style["Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{18,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{22.400000000000002`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip["none",Row[{Row[{Style[
+RawBoxes["18"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{18,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["19"],Row[{Row[{Style[RawBoxes["19"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{19,Key["Simulation"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["320"],Row[{Row[
+{Style[RawBoxes["19"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{19,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["19"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{19,Key["FinalHuman"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[
+{Style[RawBoxes["19"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{19,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["-10.6501"],Row[{Row[{Style[RawBoxes["19"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{19,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.132501"],Row[{Row[{Style[RawBoxes["19"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{19,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.122501"],Row[{Row[{Style[RawBoxes["19"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{19,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.5"],Row[{Row[{Style[RawBoxes["19"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{19,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["extinction",Row[{Row[{Style[RawBoxes["19"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{19,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Pane[Annotation[Tooltip[RawBoxes["20"],Row[{Row[{Style[RawBoxes["20"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Simulation",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{20,Key["Simulation"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["248"],Row[{Row[
+{Style[RawBoxes["20"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["RuinStep",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{20,Key["RuinStep"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0"],Row[{Row[{Style[RawBoxes["20"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"FinalHuman",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{20,Key["FinalHuman"]},"Item",
+False],"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],
+ItemSize -> {Full,Automatic}],Item[Pane[Annotation[Tooltip[RawBoxes["100"],Row[{Row[
+{Style[RawBoxes["20"],GrayLevel[0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,
+0.6509803921568628`,0.6509803921568628`]],Style["FinalAI",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{20,Key["FinalAI"]},"Item",False],
+"Mouse"],ImageSize -> {{34,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["-7.55395"],Row[{Row[{Style[RawBoxes["20"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Alpha",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{20,Key["Alpha"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.10154"],Row[{Row[{Style[RawBoxes["20"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Beta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{20,Key["Beta"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.0915395"],Row[{Row[{Style[RawBoxes["20"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Delta",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{20,Key["Delta"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip[RawBoxes["0.5"],Row[{Row[{Style[RawBoxes["20"],GrayLevel[
+0.6`]]}],Row[{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Gamma",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{20,Key["Gamma"]},"Item",False],
+"Mouse"],ImageSize -> {{60,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}],Item[
+Pane[Annotation[Tooltip["extinction",Row[{Row[{Style[RawBoxes["20"],GrayLevel[0.6`]]}],Row[
+{Style[" \:203a ",RGBColor[0.6509803921568628`,0.6509803921568628`,0.6509803921568628`]],Style[
+"Outcome",GrayLevel[0.6`]]}]},BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 10.5`}]],
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][{20,Key["Outcome"]},"Item",False],
+"Mouse"],ImageSize -> {{105.`,Full},Automatic},ImageMargins -> {{5,3},{4,5}}],ItemSize -> {Full,Automatic}]},{Item[
+Deploy[Pane[Row[{Spacer[2],Style[Row[{Button[MouseAppearance[Mouseover[Graphics[{{EdgeForm[
+None],FaceForm[None],Rectangle[{0,0},{18,18},RoundingRadius -> 2]},Rotate[Translate[
+{CapForm[Round],Line[{{0,0},{4,5},{8,0}}],Line[{{0,5},{8,5}}]},{5,6.5`}],0,{9,9}]},
+ImageSize -> (1 -> 1),ImagePadding -> {{0,1},{1,0}},BaselinePosition -> Scaled[0.35`],
+BaseStyle -> RGBColor[0.5372549019607843`,0.5372549019607843`,0.5372549019607843`]],
+Graphics[{{EdgeForm[RGBColor[0.27450980392156865`,0.5411764705882353`,0.796078431372549`]],FaceForm[
+None],Rectangle[{0,0},{18,18},RoundingRadius -> 2]},Rotate[Translate[{CapForm[Round],RGBColor[
+0.27450980392156865`,0.5411764705882353`,0.796078431372549`],Line[{{0,0},{4,5},{8,0}}],Line[
+{{0,5},{8,5}}]},{5,6.5`}],0,{9,9}]},ImageSize -> (1 -> 1),ImagePadding -> {{0,1},{1,0}},
+BaselinePosition -> Scaled[0.35`]]],"LinkHand"],If[TypeSystem`NestedGrid`PackagePrivate`checkInteractivity[
+TypeSystem`NestedGrid`PackagePrivate`$state$$],CompoundExpression[Set[TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+Clip[Plus[TypeSystem`NestedGrid`PackagePrivate`$vPos$$,Times[Times[-1,20],If[True,
+100,1]]],{1,Plus[100,Times[-1,Times[-1,20]],1]}]],TypeSystem`NestedGrid`PackagePrivate`updateState[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,
+TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]],
+True][TypeSystem`NestedGrid`PackagePrivate`$path$$]]],Appearance -> None],Button[
+MouseAppearance[Mouseover[Graphics[{{EdgeForm[None],FaceForm[None],Rectangle[{0,0},
+{18,18},RoundingRadius -> 2]},Rotate[Translate[{CapForm[Round],Line[{{0,0},{4,5},{8,0}}]},
+{5,6.5`}],0,{9,9}]},ImageSize -> (1 -> 1),ImagePadding -> {{0,1},{1,0}},BaselinePosition -> Scaled[
+0.35`],BaseStyle -> RGBColor[0.5372549019607843`,0.5372549019607843`,0.5372549019607843`]],
+Graphics[{{EdgeForm[RGBColor[0.27450980392156865`,0.5411764705882353`,0.796078431372549`]],FaceForm[
+None],Rectangle[{0,0},{18,18},RoundingRadius -> 2]},Rotate[Translate[{CapForm[Round],RGBColor[
+0.27450980392156865`,0.5411764705882353`,0.796078431372549`],Line[{{0,0},{4,5},{8,0}}]},
+{5,6.5`}],0,{9,9}]},ImageSize -> (1 -> 1),ImagePadding -> {{0,1},{1,0}},BaselinePosition -> Scaled[
+0.35`]]],"LinkHand"],If[TypeSystem`NestedGrid`PackagePrivate`checkInteractivity[TypeSystem`NestedGrid`PackagePrivate`$state$$],
+CompoundExpression[Set[TypeSystem`NestedGrid`PackagePrivate`$vPos$$,Clip[Plus[TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+Times[Times[-1,20],If[False,100,1]]],{1,Plus[100,Times[-1,Times[-1,20]],1]}]],TypeSystem`NestedGrid`PackagePrivate`updateState[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,
+TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]],
+True][TypeSystem`NestedGrid`PackagePrivate`$path$$]]],Appearance -> None]," ",Style[
+Mouseover[Style[Row[{"rows ",1,"\[Dash]",20," of ",Style[100,FontWeight -> Bold]}],
+FontSize -> 9.333333333333332`,FontColor -> RGBColor[0.5098039215686274`,0.5098039215686274`,
+0.5098039215686274`]],Style[Row[{"rows ",1,"\[Dash]",20," of ",Style[100,FontWeight -> Bold]}],
+FontSize -> 9.333333333333332`,FontColor -> RGBColor[0.5098039215686274`,0.5098039215686274`,
+0.5098039215686274`]]],ContextMenu -> {MenuItem["Hide",KernelExecute[TypeSystem`NestedGrid`PackagePrivate`adjustLimits[
+{TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]},"Rows",1,{}]],MenuEvaluator -> Automatic],MenuItem[
+"Show up to 10 Rows",KernelExecute[TypeSystem`NestedGrid`PackagePrivate`adjustLimits[
+{TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]},"Rows",10,{}]],MenuEvaluator -> Automatic],MenuItem[
+"Show up to 30 Rows",KernelExecute[TypeSystem`NestedGrid`PackagePrivate`adjustLimits[
+{TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]},"Rows",30,{}]],MenuEvaluator -> Automatic],MenuItem[
+"Show up to 100 Rows",KernelExecute[TypeSystem`NestedGrid`PackagePrivate`adjustLimits[
+{TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]},"Rows",100,{}]],MenuEvaluator -> Automatic],MenuItem[
+"Show All",KernelExecute[TypeSystem`NestedGrid`PackagePrivate`adjustLimits[{TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]},"Rows",100000000,{}]],MenuEvaluator -> Automatic]}]," ",Button[
+MouseAppearance[Mouseover[Graphics[{{EdgeForm[None],FaceForm[None],Rectangle[{0,0},
+{18,18},RoundingRadius -> 2]},Rotate[Translate[{CapForm[Round],Line[{{0,0},{4,5},{8,0}}]},
+{5,6.5`}],Times[180,Degree],{9,9}]},ImageSize -> (1 -> 1),ImagePadding -> {{0,1},{1,0}},
+BaselinePosition -> Scaled[0.35`],BaseStyle -> RGBColor[0.5372549019607843`,0.5372549019607843`,
+0.5372549019607843`]],Graphics[{{EdgeForm[RGBColor[0.27450980392156865`,0.5411764705882353`,
+0.796078431372549`]],FaceForm[None],Rectangle[{0,0},{18,18},RoundingRadius -> 2]},Rotate[
+Translate[{CapForm[Round],RGBColor[0.27450980392156865`,0.5411764705882353`,0.796078431372549`],Line[
+{{0,0},{4,5},{8,0}}]},{5,6.5`}],Times[180,Degree],{9,9}]},ImageSize -> (1 -> 1),ImagePadding -> {{0,1},{1,0}},
+BaselinePosition -> Scaled[0.35`]]],"LinkHand"],If[TypeSystem`NestedGrid`PackagePrivate`checkInteractivity[
+TypeSystem`NestedGrid`PackagePrivate`$state$$],CompoundExpression[Set[TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+Clip[Plus[TypeSystem`NestedGrid`PackagePrivate`$vPos$$,Times[20,If[False,100,1]]],
+{1,Plus[100,Times[-1,20],1]}]],TypeSystem`NestedGrid`PackagePrivate`updateState[TypeSystem`NestedGrid`PackagePrivate`$state$$,
+TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]],True][TypeSystem`NestedGrid`PackagePrivate`$path$$]]],
+Appearance -> None],Button[MouseAppearance[Mouseover[Graphics[{{EdgeForm[None],FaceForm[
+None],Rectangle[{0,0},{18,18},RoundingRadius -> 2]},Rotate[Translate[{CapForm[Round],Line[
+{{0,0},{4,5},{8,0}}],Line[{{0,5},{8,5}}]},{5,6.5`}],Times[180,Degree],{9,9}]},ImageSize -> (1 -> 1),
+ImagePadding -> {{0,1},{1,0}},BaselinePosition -> Scaled[0.35`],BaseStyle -> RGBColor[
+0.5372549019607843`,0.5372549019607843`,0.5372549019607843`]],Graphics[{{EdgeForm[
+RGBColor[0.27450980392156865`,0.5411764705882353`,0.796078431372549`]],FaceForm[None],Rectangle[
+{0,0},{18,18},RoundingRadius -> 2]},Rotate[Translate[{CapForm[Round],RGBColor[0.27450980392156865`,
+0.5411764705882353`,0.796078431372549`],Line[{{0,0},{4,5},{8,0}}],Line[{{0,5},{8,5}}]},
+{5,6.5`}],Times[180,Degree],{9,9}]},ImageSize -> (1 -> 1),ImagePadding -> {{0,1},{1,0}},
+BaselinePosition -> Scaled[0.35`]]],"LinkHand"],If[TypeSystem`NestedGrid`PackagePrivate`checkInteractivity[
+TypeSystem`NestedGrid`PackagePrivate`$state$$],CompoundExpression[Set[TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+Clip[Plus[TypeSystem`NestedGrid`PackagePrivate`$vPos$$,Times[20,If[True,100,1]]],
+{1,Plus[100,Times[-1,20],1]}]],TypeSystem`NestedGrid`PackagePrivate`updateState[TypeSystem`NestedGrid`PackagePrivate`$state$$,
+TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]],True][TypeSystem`NestedGrid`PackagePrivate`$path$$]]],
+Appearance -> None]}],ContextMenu -> {}]}],ImageMargins -> {{0,-1},{-1,1}}]],Background -> RGBColor[
+0.9764705882352941`,0.9764705882352941`,0.9764705882352941`],Alignment -> {Left,Top}],SpanFromLeft,SpanFromLeft,SpanFromLeft,SpanFromLeft,SpanFromLeft,SpanFromLeft,SpanFromLeft,SpanFromLeft}},
+BaseStyle -> {ContextMenu -> Dynamic[CompoundExpression[TypeSystem`NestedGrid`PackagePrivate`$contextMenuTrigger,
+Which[UnsameQ[TypeSystem`NestedGrid`PackagePrivate`$lastOutputID,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]],{},SameQ[TypeSystem`NestedGrid`PackagePrivate`$contextMenuTrigger,
+TypeSystem`NestedGrid`PackagePrivate`$lastContextMenuTrigger],TypeSystem`NestedGrid`PackagePrivate`$lastContextMenu,
+True,CompoundExpression[Set[TypeSystem`NestedGrid`PackagePrivate`$lastContextMenuTrigger,
+TypeSystem`NestedGrid`PackagePrivate`$contextMenuTrigger],Set[TypeSystem`NestedGrid`PackagePrivate`$lastContextMenu,
+Block[{Set[TypeSystem`NestedGrid`PackagePrivate`$globalScrollPos,{TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$}]},
+With[{Set[TypeSystem`NestedGrid`PackagePrivate`lastPath$,TypeSystem`NestedGrid`PackagePrivate`$lastPath],Set[
+TypeSystem`NestedGrid`PackagePrivate`lastPathType$,TypeSystem`NestedGrid`PackagePrivate`$lastPathType],Set[
+TypeSystem`NestedGrid`PackagePrivate`isLeafHeader$,TypeSystem`NestedGrid`PackagePrivate`$lastPathIsLeafHeader],Set[
+TypeSystem`NestedGrid`PackagePrivate`headerHidden$,And[MatchQ[TypeSystem`NestedGrid`PackagePrivate`$lastPathType,
+Alternatives["RowHeader","ColumnHeader"]],TypeSystem`NestedGrid`PackagePrivate`headerHiddenQ[
+TypeSystem`NestedGrid`PackagePrivate`$lastPath,TypeSystem`NestedGrid`PackagePrivate`$state$$]]],Set[
+TypeSystem`NestedGrid`PackagePrivate`allHidden$,TypeSystem`NestedGrid`PackagePrivate`allHiddenQ[
+TypeSystem`NestedGrid`PackagePrivate`$lastPath,TypeSystem`NestedGrid`PackagePrivate`$state$$]],Set[
+TypeSystem`NestedGrid`PackagePrivate`anyHidden$,TypeSystem`NestedGrid`PackagePrivate`anyHiddenQ[
+TypeSystem`NestedGrid`PackagePrivate`$lastPath,TypeSystem`NestedGrid`PackagePrivate`$state$$]],Set[
+TypeSystem`NestedGrid`PackagePrivate`sortDirection$,TypeSystem`NestedGrid`PackagePrivate`columnSortDirection[
+TypeSystem`NestedGrid`PackagePrivate`$lastPath,TypeSystem`NestedGrid`PackagePrivate`$state$$[
+"SortPaths"],TypeSystem`NestedGrid`PackagePrivate`$state$$["SortDirections"]]],Set[
+TypeSystem`NestedGrid`PackagePrivate`haveData$,Not[FailureQ[TypeSystem`NestedGrid`PackagePrivate`datasetInitialData[
+TypeSystem`NestedGrid`PackagePrivate`$state$$]]]],Set[TypeSystem`NestedGrid`PackagePrivate`isKeyDummy$,
+Not[FreeQ[TypeSystem`NestedGrid`PackagePrivate`$lastPath,Keys]]]},Join[{If[Or[Not[
+TypeSystem`NestedGrid`PackagePrivate`haveData$],Not[TypeSystem`NestedGrid`PackagePrivate`anyHidden$],
+TypeSystem`NestedGrid`PackagePrivate`isKeyDummy$],Nothing,MenuItem[StringJoin["Show ",
+Which[Equal[TypeSystem`NestedGrid`PackagePrivate`lastPathType$,"Item"],"",Equal[TypeSystem`NestedGrid`PackagePrivate`lastPathType$,
+"RowHeader"],"Row",Equal[TypeSystem`NestedGrid`PackagePrivate`lastPathType$,"ColumnHeader"],
+"Column",True,""]],KernelExecute[TypeSystem`NestedGrid`PackagePrivate`updateHiddenItems[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,
+TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]][
+TypeSystem`NestedGrid`PackagePrivate`lastPath$,"remove"]],MenuEvaluator -> Automatic]],If[
+Or[Not[TypeSystem`NestedGrid`PackagePrivate`haveData$],TypeSystem`NestedGrid`PackagePrivate`pathEmptyQ[
+TypeSystem`NestedGrid`PackagePrivate`$lastPath,TypeSystem`NestedGrid`PackagePrivate`$state$$],
+TypeSystem`NestedGrid`PackagePrivate`isKeyDummy$,And[TypeSystem`NestedGrid`PackagePrivate`allHidden$,
+TypeSystem`NestedGrid`PackagePrivate`headerHidden$]],Nothing,MenuItem[StringJoin[
+"Hide ",Which[Equal[TypeSystem`NestedGrid`PackagePrivate`lastPathType$,"Item"],"",
+Equal[TypeSystem`NestedGrid`PackagePrivate`lastPathType$,"RowHeader"],"Row",Equal[
+TypeSystem`NestedGrid`PackagePrivate`lastPathType$,"ColumnHeader"],"Column",True,
+""]],KernelExecute[TypeSystem`NestedGrid`PackagePrivate`updateHiddenItems[TypeSystem`NestedGrid`PackagePrivate`$state$$,
+TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]][TypeSystem`NestedGrid`PackagePrivate`lastPath$,
+"add"]],MenuEvaluator -> Automatic]],Delimiter},If[And[TypeSystem`NestedGrid`PackagePrivate`haveData$,
+MatchQ[TypeSystem`NestedGrid`PackagePrivate`lastPathType$,Alternatives["ColumnHeader",
+"KeyDummy"]],TypeSystem`NestedGrid`PackagePrivate`isLeafHeader$,Not[TypeSystem`NestedGrid`PackagePrivate`allHidden$]],
+{If[UnsameQ[TypeSystem`NestedGrid`PackagePrivate`sortDirection$,"Ascending"],MenuItem[
+"Sort",KernelExecute[TypeSystem`NestedGrid`PackagePrivate`updateSort[TypeSystem`NestedGrid`PackagePrivate`$state$$,
+TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][
+TypeSystem`NestedGrid`PackagePrivate`lastPath$,"Ascending"]],MenuEvaluator -> Automatic],
+Nothing],If[UnsameQ[TypeSystem`NestedGrid`PackagePrivate`sortDirection$,"Descending"],
+MenuItem["Reverse Sort",KernelExecute[TypeSystem`NestedGrid`PackagePrivate`updateSort[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,
+TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][TypeSystem`NestedGrid`PackagePrivate`lastPath$,
+"Descending"]],MenuEvaluator -> Automatic],Nothing],If[UnsameQ[TypeSystem`NestedGrid`PackagePrivate`sortDirection$,
+None],MenuItem["Unsort",KernelExecute[TypeSystem`NestedGrid`PackagePrivate`updateSort[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,
+TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][TypeSystem`NestedGrid`PackagePrivate`lastPath$,
+None]],MenuEvaluator -> Automatic],Nothing],Delimiter},{}],{MenuItem["Copy Position to Clipboard",
+KernelExecute[TypeSystem`NestedGrid`PackagePrivate`toCurrentPosition[TypeSystem`NestedGrid`PackagePrivate`copyClip]],
+MenuEvaluator -> Automatic],If[TypeSystem`NestedGrid`PackagePrivate`haveData$,MenuItem[
+"Copy Data to Clipboard",KernelExecute[TypeSystem`NestedGrid`PackagePrivate`toCurrentData[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`copyClip]],
+MenuEvaluator -> Automatic],Nothing],Delimiter,MenuItem["Paste Position in New Cell",
+KernelExecute[TypeSystem`NestedGrid`PackagePrivate`toCurrentPosition[TypeSystem`NestedGrid`PackagePrivate`cellPaste]],
+MenuEvaluator -> Automatic],If[TypeSystem`NestedGrid`PackagePrivate`haveData$,MenuItem[
+"Paste Data in New Cell",KernelExecute[TypeSystem`NestedGrid`PackagePrivate`toCurrentData[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`cellPaste]],
+MenuEvaluator -> Automatic],Nothing]}]]]]]]]],FontFamily -> "Source Sans Pro",FontSize -> 14,FontWeight -> Plain},
+Dividers -> All,FrameStyle -> GrayLevel[0.7490196078431373`],Spacings -> {0,0},Alignment -> Left,
+BaseStyle -> {FontFamily -> "Source Sans Pro",FontSize -> 14,FontWeight -> Plain}],
+LineBreakWithin -> False,ContextMenu -> {},NumberMarks -> False,ShowAutoStyles -> False]]],Set[
+TypeSystem`NestedGrid`PackagePrivate`initialQ,True]},Dynamic[TypeSystem`NestedGrid`PackagePrivate`setupViewPath[
+TypeSystem`NestedGrid`PackagePrivate`$path$$,CompoundExpression[If[Not[TypeSystem`NestedGrid`PackagePrivate`initialQ],
+Module[{Set[TypeSystem`NestedGrid`PackagePrivate`tmpGrid$,$Failed],Set[TypeSystem`NestedGrid`PackagePrivate`tmpData$,
+TypeSystem`NestedGrid`PackagePrivate`datasetData[TypeSystem`NestedGrid`PackagePrivate`$state$$]]},
+CompoundExpression[Set[TypeSystem`NestedGrid`PackagePrivate`tmpGrid$,If[FailureQ[
+TypeSystem`NestedGrid`PackagePrivate`tmpData$],TypeSystem`NestedGrid`PackagePrivate`renderedGrid,
+TypeSystem`NestedGrid`PackagePrivate`renderGrid[TypeSystem`NestedGrid`PackagePrivate`$state$$,
+TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$hPos$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$,
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][
+TypeSystem`NestedGrid`PackagePrivate`tmpData$]]],If[Not[FailureQ[TypeSystem`NestedGrid`PackagePrivate`tmpGrid$]],
+Set[TypeSystem`NestedGrid`PackagePrivate`renderedGrid,TypeSystem`NestedGrid`PackagePrivate`tmpGrid$]],
+Null]]],Set[TypeSystem`NestedGrid`PackagePrivate`initialQ,False],TypeSystem`NestedGrid`PackagePrivate`$vPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$hPos$$,If[FailureQ[TypeSystem`NestedGrid`PackagePrivate`renderedGrid],
+TypeSystem`SparseGrid[TypeSystem`H["(data no longer present)"]],TypeSystem`NestedGrid`PackagePrivate`renderedGrid]]],
+RuleDelayed[TrackedSymbols,{TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$}]],
+RuleDelayed[DynamicModuleValues,{}]]],Set[TypeSystem`NestedGrid`PackagePrivate`$topBar$$,
+Dynamic[TypeSystem`NestedGrid`PackagePrivate`makeFramedBar[TypeSystem`PackageScope`SubViewPathbar[
+TypeSystem`NestedGrid`PackagePrivate`$path$$,TypeSystem`NestedGrid`PackagePrivate`updateState[
+TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$path$$,
+TypeSystem`NestedGrid`PackagePrivate`$vPos$$,TypeSystem`NestedGrid`PackagePrivate`$hPos$$,
+TypeSystem`NestedGrid`PackagePrivate`$grid$$,TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]]],RuleDelayed[TrackedSymbols,{TypeSystem`NestedGrid`PackagePrivate`$path$$}]]],Set[
+TypeSystem`NestedGrid`PackagePrivate`$bottomBar$$,Dynamic[Replace[Replace[TypeSystem`NestedGrid`PackagePrivate`mouseAnnotation$$,
+{TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][Null,Blank[]] -> "",RuleDelayed[
+TypeSystem`NestedGrid`PackagePrivate`$SliceMarker[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]][Pattern[TypeSystem`NestedGrid`PackagePrivate`path$,
+Blank[]],Pattern[TypeSystem`NestedGrid`PackagePrivate`pathType$,Blank[]],Pattern[
+TypeSystem`NestedGrid`PackagePrivate`isLeafHeader$,Blank[]]],CompoundExpression[Increment[
+TypeSystem`NestedGrid`PackagePrivate`$contextMenuTrigger],Set[TypeSystem`NestedGrid`PackagePrivate`$lastPath,
+TypeSystem`NestedGrid`PackagePrivate`path$],Set[TypeSystem`NestedGrid`PackagePrivate`$lastPathType,
+TypeSystem`NestedGrid`PackagePrivate`pathType$],Set[TypeSystem`NestedGrid`PackagePrivate`$lastPathIsLeafHeader,
+TypeSystem`NestedGrid`PackagePrivate`isLeafHeader$],Set[TypeSystem`NestedGrid`PackagePrivate`$lastOutputID,
+TypeSystem`NestedGrid`PackagePrivate`localHold[TypeSystem`NestedGrid`PackagePrivate`$outputID$$]],
+TypeSystem`NestedGrid`PackagePrivate`makePathTrail[TypeSystem`NestedGrid`PackagePrivate`path$,
+TypeSystem`NestedGrid`PackagePrivate`makePathElements]]],RuleDelayed[Null,Spacer[
+10]],RuleDelayed[Blank[],Spacer[10]]}],RuleDelayed[Pattern[TypeSystem`NestedGrid`PackagePrivate`bar,
+Except[Alternatives[Blank[Spacer],""]]],TypeSystem`NestedGrid`PackagePrivate`makeFramedPathbar[
+TypeSystem`NestedGrid`PackagePrivate`bar]]],RuleDelayed[TrackedSymbols,{TypeSystem`NestedGrid`PackagePrivate`mouseAnnotation$$}]]],Set[
+TypeSystem`NestedGrid`PackagePrivate`mouseAnnotation$$,Null]},DynamicWrapperBox[DynamicBox[
+ToBoxes[Dataset`DatasetContent[2,"Path" -> Hold[TypeSystem`NestedGrid`PackagePrivate`$path$$],
+"Grid" -> Hold[TypeSystem`NestedGrid`PackagePrivate`$grid$$],"State" -> Hold[TypeSystem`NestedGrid`PackagePrivate`$state$$],
+"VPos" -> Hold[TypeSystem`NestedGrid`PackagePrivate`$vPos$$],"HPos" -> Hold[TypeSystem`NestedGrid`PackagePrivate`$hPos$$],
+"TopBar" -> Hold[TypeSystem`NestedGrid`PackagePrivate`$topBar$$],"BottomBar" -> Hold[
+TypeSystem`NestedGrid`PackagePrivate`$bottomBar$$],"OutputID" -> Hold[TypeSystem`NestedGrid`PackagePrivate`localHold[
+TypeSystem`NestedGrid`PackagePrivate`$outputID$$]]],StandardForm],RuleDelayed[TrackedSymbols,
+{TypeSystem`NestedGrid`PackagePrivate`$state$$,TypeSystem`NestedGrid`PackagePrivate`$grid$$}]],
+Set[TypeSystem`NestedGrid`PackagePrivate`mouseAnnotation$$,MouseAnnotation[]]],RuleDelayed[
+Initialization,Set[TypeSystem`NestedGrid`PackagePrivate`$outputID$$,CreateUUID[]]],
+RuleDelayed[DynamicModuleValues,{}],BaseStyle -> {LineBreakWithin -> False},RuleDelayed[
+UnsavedVariables,{TypeSystem`NestedGrid`PackagePrivate`$outputID$$}],ExpressionUUID -> "9647b077-83fb-4c1a-b9aa-20dcad5aa7e3"],
+Deploy,DefaultBaseStyle -> "Deploy"],Dataset`InterpretDataset[1],Selectable -> False,
+Editable -> False,SelectWithContents -> True],StandardForm],"Print",ExpressionUUID -> "cad2a2d4-3457-4405-874e-c320712b7752"]},
+StyleDefinitions -> "Default.nb",FrontEndVersion -> "14.2 for Wolfram Cloud 1.72 (April 27, 2025)"]

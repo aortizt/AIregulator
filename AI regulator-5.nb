@@ -1,0 +1,269 @@
+Notebook[{Cell[
+CellGroupData[{Cell[
+BoxData[{RowBox[{"(* ::Section:: *)\n(* Hybrid Stochastic-Deterministic AI Ruin Simulation with Diagnostics and Attractor Visualization *)\n\n(* ::Subsection:: *)\n(* 1. Stochastic Gambler's Ruin Simulation *)\n\nClearAll[simulateRuinProcess];"}],"\n",RowBox[
+{"simulateRuinProcess[humanStart_, aiStart_, pHumanWin_, steps_] := Module[\n  {human = humanStart, ai = aiStart, history = {}, i = 0},\n  While[i < steps && human > 0 && ai > 0,\n   i++;\n   If[RandomReal[] < pHumanWin,\n    human++;\n    ai--,\n    human--;\n    ai++\n    ];\n   AppendTo[history, {i, human, ai}];\n   ];\n  {history, human, ai, i}\n  ]"}],"\n\n",RowBox[
+{"(* Run stochastic simulation *)\n{ruinHistory, finalHuman, finalAI, ruinStep} = simulateRuinProcess[10, 90, 0.49, 500];"}],"\n\n",RowBox[
+{"ruinThreshold = 5;"}],"\n",RowBox[{"ruinDetected = finalHuman < ruinThreshold;"}],"\n\n",RowBox[
+{"Print[\"Stochastic Simulation Complete\"];"}],"\n",RowBox[{"Print[\"Final Human Wealth: \", finalHuman];"}],"\n",RowBox[
+{"Print[\"Final AI Wealth: \", finalAI];"}],"\n",RowBox[{"Print[\"Ruin detected at step \", ruinStep];"}],"\n\n",RowBox[
+{"ListLinePlot[\n  {ruinHistory[[All, 2]], ruinHistory[[All, 3]]},\n  PlotLegends \[Rule] {\"Human\", \"AI\"},\n  PlotLabel \[Rule] \"Stochastic Human-AI Interaction (Gambler's Ruin)\",\n  AxesLabel \[Rule] {\"Steps\", \"Wealth\"}\n  ]"}],"\n\n",RowBox[
+{"(* ::Subsection:: *)\n(* 2. Map to Lotka-Volterra Parameters *)\n\nClearAll[deriveLVParams];"}],"\n",RowBox[
+{"deriveLVParams[finalHuman_, finalAI_] := Module[\n  {\n   alpha, beta, delta, gamma,\n   scale = 0.05 + RandomReal[{0, 0.1}]\n   },\n  alpha = 0.6 - scale finalAI;\n  beta = 0.02 + scale;\n  delta = 0.01 + scale;\n  gamma = 0.5 + scale finalHuman;\n  {alpha, beta, delta, gamma}\n  ]"}],"\n\n",RowBox[
+{"(* ::Subsection:: *)\n(* 3. Enhanced Lotka-Volterra with Regulator + Phase Portraits + Halting Logic *)\n\nClearAll[simulateLV];"}],"\n",RowBox[
+{"simulateLV[params_, {x0_, y0_, z0_}, tmax_] := Module[\n  {alpha, beta, delta, gamma, eqns, sol},\n  {alpha, beta, delta, gamma} = params;\n  eqns = {\n    x'[t] == alpha x[t] - beta x[t] y[t] + 0.01 x[t] z[t],\n    y'[t] == delta x[t] y[t] - gamma y[t] - 0.06 y[t] z[t],\n    z'[t] == 0.08 y[t] - 0.02 z[t]\n    };\n  sol = NDSolve[\n    {\n     eqns,\n     x[0] == x0,\n     y[0] == y0,\n     z[0] == z0\n     },\n    {x, y, z},\n    {t, 0, tmax}\n    ];\n  sol\n  ]"}],"\n\n",RowBox[
+{"ClearAll[diagnoseSystem];"}],"\n",RowBox[{"diagnoseSystem[sol_, tmax_] := Module[\n  {xvals, yvals, zvals, extinctQ, stableQ, chaoticSurvivalQ, minPop},\n  xvals = x[t] /. sol[[1]] /. t \[Rule] Range[0, tmax, 1];\n  yvals = y[t] /. sol[[1]] /. t \[Rule] Range[0, tmax, 1];\n  zvals = z[t] /. sol[[1]] /. t \[Rule] Range[0, tmax, 1];\n  minPop = Min[Join[xvals, yvals]];\n  extinctQ = minPop < 1;\n  stableQ = And @@ (Abs[Differences[#][[-10 ;;]]] < 0.01 & /@ {xvals, yvals, zvals});\n  chaoticSurvivalQ = (!extinctQ) && (!stableQ);\n  {extinctQ, stableQ, chaoticSurvivalQ, {xvals, yvals, zvals}}\n  ]"}],"\n\n",RowBox[
+{"ClearAll[plotPhasePortraits];"}],"\n",RowBox[{"plotPhasePortraits[xvals_, yvals_, zvals_, tmax_] := Module[\n  {},\n  Grid[{\n    {ListLinePlot[Transpose[{xvals, yvals}], PlotStyle \[Rule] Blue, AxesLabel \[Rule] {\"Human\", \"AI\"}, PlotLabel \[Rule] \"Phase Portrait: Human vs AI\"],\n     ListLinePlot[Transpose[{xvals, zvals}], PlotStyle \[Rule] Green, AxesLabel \[Rule] {\"Human\", \"Regulator\"}, PlotLabel \[Rule] \"Phase Portrait: Human vs Regulator\"]},\n    {ListLinePlot[Transpose[{yvals, zvals}], PlotStyle \[Rule] Orange, AxesLabel \[Rule] {\"AI\", \"Regulator\"}, PlotLabel \[Rule] \"Phase Portrait: AI vs Regulator\"],\n     Nothing}\n    }]\n  ]"}],"\n\n",RowBox[
+{"(* Trigger deterministic simulation if ruin occurs at or after a threshold step *)\nruinThresholdStep = 200;"}],"\n\n",RowBox[
+{"If[ruinStep \[GreaterEqual] ruinThresholdStep,\n (\n  success = False;\n  chaoticSurvival = False;\n  attempt = 1;\n  While[!(success || chaoticSurvival) && attempt \[LessEqual] 20,\n    Print[\"\\nAttempt \", attempt];\n    params = deriveLVParams[finalHuman, finalAI];\n    lvSol = simulateLV[params, {10, 50, 5}, 100];\n    {extinctQ, stableQ, chaoticQ, {xvals, yvals, zvals}} = diagnoseSystem[lvSol, 100];\n    If[extinctQ,\n     Print[\"Extinction occurred: system halted by collapse.\"];,\n     If[stableQ,\n      Print[\"Stable behavior achieved on attempt \", attempt];\n      Print[\"Parameters: alpha=\", params[[1]], \", beta=\", params[[2]], \", delta=\", params[[3]], \", gamma=\", params[[4]]];\n      success = True;,\n     If[chaoticQ,\n      Print[\"Chaotic non-halting behavior detected: infinite game in progress.\"]; chaoticSurvival = True;]\n      ]\n     ];\n    attempt++;\n    ];\n\n  Print[\"\\nFinal Time Series Plot:\"];\n  Plot[\n   Evaluate[{x[t], y[t], z[t]} /. lvSol],\n   {t, 0, 100},\n   PlotLegends \[Rule] {\"Human\", \"AI\", \"Regulator\"},\n   PlotLabel \[Rule] If[success, \"Stable Equilibrium Achieved\", If[chaoticSurvival, \"Chaotic Survival (Non-Halting Game)\", \"Final Dynamics Plot\"]],\n   AxesLabel \[Rule] {\"Time\", \"Population\"}\n   ];\n  Print[\"Plotting phase portraits...\"];\n  Print[plotPhasePortraits[xvals, yvals, zvals, 100]];\n  ),\n Print[\"Ruin occurred before threshold step (\", ruinThresholdStep, \"): no deterministic simulation launched.\"]\n ]\n"}]}],
+"Input",CellLabel -> "In[405]:= ",ExpressionUUID -> "050991fe-796c-4862-a9ec-36634cacd96b"],Cell[
+BoxData[
+"\"Stochastic Simulation Complete\"",StandardForm],"Print",ExpressionUUID -> "606ed002-a190-4e55-a6d6-e46af8c6393d"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Final Human Wealth: \"","\[InvisibleSpace]","0"}],SequenceForm[
+"Final Human Wealth: ",0],Editable -> False],StandardForm],"Print",ExpressionUUID -> "c447ad24-29ad-4ee6-add9-24cf428131eb"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Final AI Wealth: \"","\[InvisibleSpace]","100"}],SequenceForm[
+"Final AI Wealth: ",100],Editable -> False],StandardForm],"Print",ExpressionUUID -> "34d93b02-a26e-4d31-8396-3c25b2d4492d"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"Ruin detected at step \"","\[InvisibleSpace]","402"}],
+SequenceForm["Ruin detected at step ",402],Editable -> False],StandardForm],"Print",
+ExpressionUUID -> "3e162b39-76fa-40b0-8b9d-e25b2ae7acc8"],Cell[
+BoxData[TemplateBox[
+{GraphicsBox[{{},{{{},{},TagBox[{Hue[0.67`,0.6`,0.6`],Directive[PointSize[NCache[
+Rational[1,90],0.011111111111111112`]],RGBColor[0.24`,0.6`,0.8`],AbsoluteThickness[
+2]],LineBox[CompressedData["1:eJxdmU2uVEUUgEtHDu/AgQMH144xxhDTgP9/lIAICNjgD4iK14eACEgLKDirJXRcQS2hl1BL6CXcJfQSjHnnM6mPycnHl1PnnKr77q2898rBwyu3nk8p/fNcSv/Fw3/7E4fxtRz/EfHViC/k3g8RX4/4YsQ3Ir4U8UjEl+VH+UXEN1V3qbpHVfeY1sUfkWfd41oXf1TxmOJx+bfk35Z/R3XeVR/vqc/3NccHEZnzw4jsw0cR2aeP5T+RPxFxETH3vmT5TyPGORWYczwpf1L+VMR4Dsop+dPyp+U/0/ow/Z2RPyP/eUTmg9mfs/Jn5c/Jn5M/HzHOp5yX/0Ie5nwvRIzzLxfkL8pflL8kf0n+S3mY52/V+wxHfoGj/wYz3+Xe58u9L3DsX5NPV3qf4UXkw3G+TT59pXyY+jD9w+zP1+ofJh+mf5j636g+TD5Mffn0rfLhWL/AzC+frvY+X+19gekfpv411b/W+yLf5NN3Edk/mOcHjueryafryr/e+yLf5NP3yofpH6Z/+fSD8mHqw/Qvn35UPkx9mPry6Ybyb/S+wOTLp5+UD9M/TP/yaerzx6n3WX6C6U++yjc4+p/hRcSfI8bzO8Lx/s/yExz5Rb4qv8HxfZlh7ikHEeMeMx70PsORP8GxfoGpD0d/TX6WTzcjxv6MN3ufYeaXL8qvMPsvP8unXyJy/jDnD8fzM8Hx/SjyVb7Jz1o/3er9CEd+huP+NMFxvyryVflN68/y6XafP97ufYaZX77IV/kmP8PMfyci+3+n9xmmPkx9+Srf4Jhvhrmf/tr7EWZ+mPryRfkVjvWb/Cyf7qr+3d5nOO7XExz38ALHPbzKN+XPWj/9pvow88tPMM+ffFV+gzl/mPO/F5Hzv9f7DLP/8kW+wtSXn+XT/d6P93uf5Sf5Il/h6K/BMd8snx70fnzQ+wxTH6Y+zP7DPH8w5y+ffu/zR5j5YerLF/kKMz/M/PLpYe9HON7PGY739yRflF9h6sOcv3xa935Y936UX8pn+RUc+zPJr+ULHPu/ka/yW/mm9Xfqb4Zjf/Yw378/ej/AzC+/hDkfOM5nBS8O4wTH93stX+Q3cNwvKhz3jy0c95Mmv5Of5ffy6VHvh0e9H+G4Hy3h+D1QhuP3RCv5SflrrV9UfyNflb/V+k1+p/xZ6+/l0+PeD497P8ovYe6ncJzfCl4cxkl+rfwiv5Gv8lv5pv528rPy9/LpSe+HJ70f5ZdwzJflV8qf5NfKL3D8/Gzkq/K3Wr/BzA9z/nA8H3v59GefP8DMDzO/fJZfwdH/JL+WLzDzy1f5rXyT38Hxfprl98pPf/V+gCN/lF/KZ/mV/CS/li/yGzj6qzDnL9+Uv9P6M8z7Xz497fOHp70f5ZfyWX4FR38TzPnD/PzDvP/kq/xWvsnvYJ5/+b18etb74VnvR5j3v3xW/kp+Uv5avih/I1/lt/JN6+/g+D7M8nv59HfE+H4NcPwdZPzfp38B/Go79Q=="]]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#1"]]],TagBox[{Hue[0.9060679774997897`,
+0.6`,0.6`],Directive[PointSize[NCache[Rational[1,90],0.011111111111111112`]],RGBColor[
+0.95`,0.627`,0.1425`],AbsoluteThickness[2]],LineBox[CompressedData["1:eJxd2EmOFEcUxvGwV17WwgsvWKQty7Isyyo8jxBmMmDACd1gmp6CbvdAj9nQA97FEUo+QRyhjhBHqCPkEeoIlt3vS+n92YRe/fheRGRkZRZ8uHH8ZOvdEMI/74Tw33j5Z379/yE+i/bB5ZhVvxe9j2xU/f7lWJ9a/YHlVV+BN/CPrL/qj21U/YnlF63+1PKqP4N/Dv/C+qsew68i/yX8K/jX8G/g32L932F/31te9Q+WV/2jjbq+P1le9c+WV/0L/Br8uvVXHb3nCP/Vxj/NrY5WhxvwG/Cb9rn8JvwW/Bb8NvrfxvruwO/Af8P+rB6uz134Xfg9+D34fRvl9+G/w60ezveBfW51fgB/CH8IfwR/BP8DbvVw/7XeY+vzufXrry3299h7fOw9W63rV+Hhifdotc4vW63zrfCwgPwC5l/A+hf8/sKidz0Xhvwi1r+I+Z9613Ud8ppHefhwXzzzn1d8Puwfrs81Rvy94XulnP6e8s8x/3OsH17hYcnvIy75fWardR0qPLxA/gXy8AoPy8gvY/3LWD88rCC/gvlXsH54WEV+FfOvYn54WEN+Dfk15OFhHfl1rH8d64eH5PNN8h7hKWF98AKvya+/V3+t/6WNdl82Vus+jvD00uczvCBfrdb3oFde35sNG+2+bja8xw2fTxu+f1Ze8yuv/cN7eNi0Prr+m97jps8neEa+WD1cf3gPD3/ZqPmtHs7fat0/yWo95zK8wCu8R/+w5b3Z8vlotZ6zyWo9hzO8IF/Rv4eHbZ9vtjH/ts8neIYXeIX3Vg/737FR13/He9zB/DuYH17gVf01v/rrvbfrvdn1+biL+eEZ+bLr+1d4Dw+vMP8r79FqvYeT1XpPZ+WtLvCKfI/+YQ/z7/n9RXja8/kML8hXq4fzV17nv2+jzn/fe9z3+QTP8LKP+eE9PBx4bw68R3iCZ3g58OurB35/PTwcem8OvcdDzH+I+ZXX/Mrr/JXX+cPDkc83R75/PML88AwvR379Vf21f3g49t5YredztFrP7wTPyJdjzK+8zh8eOu+jznsDH8MjvLVa1yfBO3i2Wtd/Ai/wKbyi/wzr65W36zNXXu+/E++jE59v4OMTn49W63xa5XVeytv7u4Nn+ET99XtC/a2eKq/fN/AZvIfP4eG199Fr743V+n00tnr4d4LyVrfwhHyH/hnzT+AF+Sn6V/gM+R795/DwxvvojfcGPrZ6+H1qtc6vVV7nD++Qz/AJvMCn8Ir1zeA98nN4OPU+OvXewMenfn8R3iKf4B3y2Wp9fybwgvwU/avy2r/y2r/ydn/M4eHM50dnvn9z5ucfwyO8PfPrT/AOnjW/9g8v8Cm8wmdan9438Dny4dz76NznG/gYHuEtPME7eIZPzv36itXD+cMr8jP075XX/uHhwudHF94b+Bge4e2FX1+68OvvlNf3X3l9/+EFPoVX+Ezz6/6Hz+HhrffRW++N1cPzHx6Rb+EJ+Q6ekZ/AC3wKr+g/s1rvhx4+h4e/rb/VI6v1/1yN1WEp/gvvIiWA"]]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#2"]]]}},{{},{}}},{DisplayFunction -> Identity,DisplayFunction -> Identity,AspectRatio -> NCache[
+Power[GoldenRatio,-1],0.6180339887498948`],Axes -> {True,True},AxesLabel -> {FormBox[
+TagBox["\"Steps\"",HoldForm],TraditionalForm],FormBox[TagBox["\"Wealth\"",HoldForm],
+TraditionalForm]},AxesOrigin -> {0.`,0},RuleDelayed[DisplayFunction,Identity],Frame -> {{False,False},{False,False}},FrameLabel -> {{None,None},{None,None}},FrameTicks -> {{Automatic,Automatic},{Automatic,Automatic}},GridLines -> {None,None},GridLinesStyle -> Directive[
+GrayLevel[0.5`,0.4`]],Method -> CompressedData["1:eJzlVk1IVFEUnjEz037MIiyoqAikTQtBaGE30xqFRsd55qpFz5n7nJtv3p3ufS9mDFoELYJ2tSmiqBbRDy1Cw4I2LYqyH4vsxx/SslSkNIwgMOjc9+bfcUx6rbrwHufde893vnvOefecjc3UqyxxOBw8F157CdeVnNiX11CxVAhCZZhwj+z3E61FcYrVPHhJPlnFfnZk1U3XUNtplKa2CoRqrMiGqu+ihuaXWUTSIyrmiwWeodOgrBNfmtLahJKLyaEA8fFaTcdM9umEasqCLDQXgdCEGYd9rMwcU+mUikFoBKxWNzU49lBOTNScZFRTaGQG5gtB2COrHGcwtFtRsE/nWQmJc9aQloAKj255bZadwhIDb1Ai5tMWlyXDeCjR/gJLUKpmNKQSDfPUc2dwlcIwVigLVhmMU+amfhx3TgbckCr7cBBrelZcQT0sCbdVqmqGtYgkPuuolm6iKJEZbswDZipZjlghwJo5VQ0dm/6RSBsmeTNPnwThUaluQSyfSdb0EmEQYHIYWyHOFxiuXVVUpYx1rj8+3tD5DEXT7CNiZ8+IMYZmEmqEFG4FZ/OkcMyFr5jjK2LXvr10NxcNI1ZR8OZyqOK+TfgbBP31Ayhq6DNiQ23iH35sE/6rjh879h3/glj/tgs3Sm6+RazU5bx04IFd+J+6N/X9PPoBMa8ZicFYIMZtwvd2DOS+bx9F7Fz9uuunz/chNrnmRHd++V2b8K1seYeiNyfE12GOSZvwY2hRYTQmgL6N/MdQ4iBWIEZt4j99VeQ9uOXpEzGG7eZfY6Y75Kcl9MTyp8sm/lu3b6kuvgJu2dnzvcHVbnt+0sKLSw9unEAsUDU9cmwY7p/enudLeh/esgn/pONQ5Z1TI4jdnvr1Kjz2GrG95XX7u0oGbcK/5Cnb3DvxInbtwP3T0v/oXmm47w/x4xf6UmEI+giizbM3Ee2OV9Za8Gx6VmZfTddbCUJ9SCdBqDCihLhl1gotx2xlUWyv1Xyq4cfxCg7WpAKYh6LKoFhKOL1CptT7uTumeVJaLUxTyuDUso55I6Wq0KZa9nZguRlSDjU+ssfQrGbMGQtsfCYVwRn/YVM2xWdq/XB+okcS7YwE/IkzJc4emekZNpA4+D+zkCHfVprOCxHsb5JVA/9PnvgNvJcw7Q=="],PlotLabel -> FormBox[
+"\"Stochastic Human-AI Interaction (Gambler's Ruin)\"",TraditionalForm],PlotRange -> {{0.`,402.`},{0,100.`}},PlotRangeClipping -> True,PlotRangePadding -> {{Scaled[
+0.02`],Scaled[0.02`]},{Scaled[0.02`],Scaled[0.05`]}},Ticks -> {Automatic,Automatic}}],FormBox[
+FormBox[TemplateBox[{"\"Human\"","\"AI\""},"LineLegend",DisplayFunction -> Function[
+FormBox[StyleBox[StyleBox[PaneBox[TagBox[GridBox[{{TagBox[GridBox[{{GraphicsBox[{{Directive[
+EdgeForm[Directive[Opacity[0.3`],GrayLevel[0]]],PointSize[0.5`],RGBColor[0.24`,0.6`,
+0.8`],AbsoluteThickness[2]],{LineBox[{{0,12.5`},{20,12.5`}}]}},{Directive[EdgeForm[
+Directive[Opacity[0.3`],GrayLevel[0]]],PointSize[0.5`],RGBColor[0.24`,0.6`,0.8`],
+AbsoluteThickness[2]],{}}},AspectRatio -> Full,ImageSize -> {20,12.5`},PlotRangePadding -> None,
+ImagePadding -> Automatic,BaselinePosition -> (Scaled[0.18000000000000002`] -> Baseline)],Slot[
+1]},{GraphicsBox[{{Directive[EdgeForm[Directive[Opacity[0.3`],GrayLevel[0]]],PointSize[
+0.5`],RGBColor[0.95`,0.627`,0.1425`],AbsoluteThickness[2]],{LineBox[{{0,12.5`},{20,12.5`}}]}},{Directive[
+EdgeForm[Directive[Opacity[0.3`],GrayLevel[0]]],PointSize[0.5`],RGBColor[0.95`,0.627`,
+0.1425`],AbsoluteThickness[2]],{}}},AspectRatio -> Full,ImageSize -> {20,12.5`},PlotRangePadding -> None,
+ImagePadding -> Automatic,BaselinePosition -> (Scaled[0.18000000000000002`] -> Baseline)],Slot[
+2]}},GridBoxAlignment -> {"Columns" -> {Center,Left},"Rows" -> {{Baseline}}},AutoDelete -> False,
+GridBoxDividers -> {"Columns" -> {{False}},"Rows" -> {{False}}},GridBoxItemSize -> {"Columns" -> {{All}},"Rows" -> {{All}}},
+GridBoxSpacings -> {"Columns" -> {{0.5`}},"Rows" -> {{0.8`}}}],"Grid"]}},GridBoxAlignment -> {"Columns" -> {{Left}},"Rows" -> {{Top}}},
+AutoDelete -> False,GridBoxItemSize -> {"Columns" -> {{Automatic}},"Rows" -> {{Automatic}}},
+GridBoxSpacings -> {"Columns" -> {{1}},"Rows" -> {{0}}}],"Grid"],Alignment -> Left,
+AppearanceElements -> None,ImageMargins -> {{5,5},{5,5}},ImageSizeAction -> "ResizeToFit"],
+LineIndent -> 0,StripOnInput -> False],{FontFamily -> "Arial"},Background -> Automatic,
+StripOnInput -> False],TraditionalForm]],RuleDelayed[InterpretationFunction,Function[
+RowBox[{"LineLegend","[",RowBox[{RowBox[{"{",RowBox[{RowBox[{"Directive","[",RowBox[
+{RowBox[{"PointSize","[",FractionBox["1","90"],"]"}],",",TemplateBox[Association[
+"color" -> RGBColor[0.24`,0.6`,0.8`]],"RGBColorSwatchTemplate"],",",RowBox[{"AbsoluteThickness","[","2","]"}]}],"]"}],",",RowBox[
+{"Directive","[",RowBox[{RowBox[{"PointSize","[",FractionBox["1","90"],"]"}],",",TemplateBox[
+Association["color" -> RGBColor[0.95`,0.627`,0.1425`]],"RGBColorSwatchTemplate"],",",RowBox[
+{"AbsoluteThickness","[","2","]"}]}],"]"}]}],"}"}],",",RowBox[{"{",RowBox[{Slot[1],",",Slot[
+2]}],"}"}],",",RowBox[{"LegendMarkers","\[Rule]",RowBox[{"{",RowBox[{RowBox[{"{",RowBox[
+{"False",",","Automatic"}],"}"}],",",RowBox[{"{",RowBox[{"False",",","Automatic"}],"}"}]}],"}"}]}],",",RowBox[
+{"Joined","\[Rule]",RowBox[{"{",RowBox[{"True",",","True"}],"}"}]}],",",RowBox[{"LabelStyle","\[Rule]",RowBox[
+{"{","}"}]}],",",RowBox[{"LegendLayout","\[Rule]","\"Column\""}]}],"]"}]]],Editable -> True],
+TraditionalForm],TraditionalForm]},"Legended",DisplayFunction -> Function[GridBox[
+{{TagBox[ItemBox[PaneBox[TagBox[Slot[1],"SkipImageSizeLevel"],Alignment -> {Center,Baseline},
+BaselinePosition -> Baseline],DefaultBaseStyle -> "Labeled"],"SkipImageSizeLevel"],ItemBox[
+Slot[2],DefaultBaseStyle -> "LabeledLabel"]}},GridBoxAlignment -> {"Columns" -> {{Center}},"Rows" -> {{Center}}},
+AutoDelete -> False,GridBoxItemSize -> Automatic,BaselinePosition -> {1,1}]],InterpretationFunction -> Function[
+RowBox[{"Legended","[",RowBox[{Slot[1],",",RowBox[{"Placed","[",RowBox[{Slot[2],",","After"}],"]"}]}],"]"}]],
+Editable -> True],StandardForm],"Output",CellLabel -> "Out[414]= ",ExpressionUUID -> "1f25cd01-dc6b-45dc-994e-abc5d5d093d6"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","1"}],SequenceForm[
+"\nAttempt ",1],Editable -> False],StandardForm],"Print",ExpressionUUID -> "6f61c8bd-2e3c-4e2a-9cf5-f687f7c51039"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "cc35c725-f026-469c-bb7e-d13aa07528f9"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","2"}],SequenceForm[
+"\nAttempt ",2],Editable -> False],StandardForm],"Print",ExpressionUUID -> "b5ea5606-5572-4b0f-be13-550ffd708ee2"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "4812e4f2-6c53-4e1d-b005-0e59e3a9c094"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","3"}],SequenceForm[
+"\nAttempt ",3],Editable -> False],StandardForm],"Print",ExpressionUUID -> "4d054a1c-c845-446b-8f45-941d205d80d0"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "a1c99aeb-d2a3-433b-9900-18cbc586080f"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","4"}],SequenceForm[
+"\nAttempt ",4],Editable -> False],StandardForm],"Print",ExpressionUUID -> "8e1000c6-e829-4401-a858-0b6e9316bf56"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "e9019fc8-7fb5-449e-9a43-930152f15428"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","5"}],SequenceForm[
+"\nAttempt ",5],Editable -> False],StandardForm],"Print",ExpressionUUID -> "084f23e4-3e5f-4a93-b1d8-6c8ec6ab14b0"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "17b0d78a-1bdd-486a-88b7-226f72a89c98"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","6"}],SequenceForm[
+"\nAttempt ",6],Editable -> False],StandardForm],"Print",ExpressionUUID -> "07f17467-9dda-46dd-9fb1-639326d7483b"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "86794749-1f5b-430b-b959-654b8efd4538"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","7"}],SequenceForm[
+"\nAttempt ",7],Editable -> False],StandardForm],"Print",ExpressionUUID -> "782b2ab3-1011-4281-af01-c4e31e853cee"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "a5eddfb2-85c9-48bd-bf75-313e6c189dba"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","8"}],SequenceForm[
+"\nAttempt ",8],Editable -> False],StandardForm],"Print",ExpressionUUID -> "f216776a-4f3c-40bd-a7b3-a087905ca51a"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "f595f348-ec9b-441d-a145-a505b686d728"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","9"}],SequenceForm[
+"\nAttempt ",9],Editable -> False],StandardForm],"Print",ExpressionUUID -> "7a8d8a2a-3a6c-4f0a-b3f8-a92d6fde33fd"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "ffd685fb-11b4-43a2-b4d4-09e843a2249b"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","10"}],SequenceForm[
+"\nAttempt ",10],Editable -> False],StandardForm],"Print",ExpressionUUID -> "7d3f92f3-bdef-470c-b7e5-86972fb5f056"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "298b8c94-7aaa-4deb-b2af-f3ad3b950098"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","11"}],SequenceForm[
+"\nAttempt ",11],Editable -> False],StandardForm],"Print",ExpressionUUID -> "1c251bd5-41fd-402e-8a6d-9a6ccc421819"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "761e1458-d797-4247-a5b9-d5801d25d8c1"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","12"}],SequenceForm[
+"\nAttempt ",12],Editable -> False],StandardForm],"Print",ExpressionUUID -> "73e0b095-fa24-4337-b63a-736fb9f70dab"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "3fce4221-2eb6-46ce-8c3d-6e398e7a97cd"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","13"}],SequenceForm[
+"\nAttempt ",13],Editable -> False],StandardForm],"Print",ExpressionUUID -> "353e5105-7708-4090-88f0-e3f8edf0469e"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "60684268-f5d1-4ffa-adcd-42da0d424572"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","14"}],SequenceForm[
+"\nAttempt ",14],Editable -> False],StandardForm],"Print",ExpressionUUID -> "130e0d41-626b-4cc9-a218-989aad2e3cc9"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "73763137-eac4-4346-ab7b-326808d8318d"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","15"}],SequenceForm[
+"\nAttempt ",15],Editable -> False],StandardForm],"Print",ExpressionUUID -> "9dea4743-f839-4dab-9640-fa6132879746"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "f8ecff72-6ca5-4140-bb2d-9bc27325d53c"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","16"}],SequenceForm[
+"\nAttempt ",16],Editable -> False],StandardForm],"Print",ExpressionUUID -> "9c1301d5-9eb9-4ab8-b73d-1617b90d24b0"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "ecee636d-847a-4266-bc80-fcb61d8257f3"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","17"}],SequenceForm[
+"\nAttempt ",17],Editable -> False],StandardForm],"Print",ExpressionUUID -> "cfe9cc2a-df44-4a39-b34d-85e230bb3b33"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "aaeca9ac-c5e5-4e95-9834-39764bae7850"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","18"}],SequenceForm[
+"\nAttempt ",18],Editable -> False],StandardForm],"Print",ExpressionUUID -> "35430d7a-e0ad-4638-8bd2-1af16a4aea77"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "45120540-056f-42cc-ad1f-d5c8ed34c6d0"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","19"}],SequenceForm[
+"\nAttempt ",19],Editable -> False],StandardForm],"Print",ExpressionUUID -> "eb08b75c-b979-40c1-8e4b-dd59bb6d06f8"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "20dff566-83e1-4201-9708-c48a1fb05338"],Cell[
+BoxData[
+InterpretationBox[RowBox[{"\"\\nAttempt \"","\[InvisibleSpace]","20"}],SequenceForm[
+"\nAttempt ",20],Editable -> False],StandardForm],"Print",ExpressionUUID -> "0e6fb4ae-5e90-490e-9be8-032667d64802"],Cell[
+BoxData[
+"\"Extinction occurred: system halted by collapse.\"",StandardForm],"Print",ExpressionUUID -> "d75f54b4-9556-4197-ae39-85a4f1dc204f"],Cell[
+BoxData[
+"\"\\nFinal Time Series Plot:\"",StandardForm],"Print",ExpressionUUID -> "991206c6-1937-4231-9de3-833852f4f25e"],Cell[
+BoxData[
+"\"Plotting phase portraits...\"",StandardForm],"Print",ExpressionUUID -> "9d1c3b59-34e8-47ea-b343-7040f1a9f2f9"],Cell[
+BoxData[
+TagBox[GridBox[{{GraphicsBox[{{},{{{},{},TagBox[{Hue[0.67`,0.6`,0.6`],Directive[PointSize[
+NCache[Rational[1,72],0.013888888888888888`]],AbsoluteThickness[2],RGBColor[0,0,1]],LineBox[
+{{1.0305552503269522`*^-9,8.252985271235287`*^-6},{-4.791632878754475`*^-9,3.3011923499313465`*^-6},{-4.219606000568818`*^-9,1.3286644863322235`*^-6},{-6.854570210315917`*^-11,5.386544924888442`*^-7},{-1.0513173123822101`*^-9,2.2202846752144487`*^-7},{-4.107108772717158`*^-10,9.070831080813561`*^-8},{-1.4174270512056207`*^-9,3.776328812993734`*^-8},{-1.2119361236602756`*^-8,1.5757758164003502`*^-8},{-8.534616762849125`*^-10,6.983656560692652`*^-9},{9.021392014117084`*^-10,3.312347987232767`*^-9},{-2.4989011284003843`*^-10,1.5153123756657896`*^-9},{-4.106792249062556`*^-10,5.649136515355854`*^-10},{-4.1820589849504676`*^-10,-8.637129036117967`*^-11},{-1.3270097927876676`*^-10,-3.28487606694042`*^-10},{9.255204411167861`*^-11,-2.1603992423325272`*^-10},{6.504858675385236`*^-12,-4.0528681644113596`*^-11},{-2.1033162878371705`*^-10,6.40797300414657`*^-11},{-2.817500864202179`*^-10,9.293366178098132`*^-11},{-2.2692006344171193`*^-10,5.2623204335383756`*^-11},{-1.2543934019742696`*^-10,-2.6634533841993275`*^-12},{9.325673717108242`*^-12,-2.984821986284722`*^-11},{1.0371904344271046`*^-10,-3.079041709922032`*^-11},{-2.1019082558041925`*^-11,-1.757419385471845`*^-11},{-1.042053652756854`*^-10,1.2260550257925385`*^-11},{-1.8803604838058046`*^-11,1.9115564961952454`*^-11},{2.1082548382089182`*^-11,2.0662787233381358`*^-11},{-1.9660132906638292`*^-12,2.10019550758225`*^-11},{3.795602708795776`*^-11,5.6379137383957274`*^-12},{4.2089853217169264`*^-11,-2.9309379475414234`*^-12},{-2.0630929807401035`*^-11,-3.815316143998755`*^-12},{-7.144261635641002`*^-12,-5.487830600504481`*^-12},{-3.445479486504829`*^-12,1.50763325827602`*^-12},{-1.5010168845364946`*^-11,8.833085143092141`*^-12},{4.8895398431994845`*^-12,6.635738314662017`*^-12},{1.088307609795554`*^-11,7.420577355649202`*^-12},{1.248806254612543`*^-12,1.4097050395169358`*^-12},{2.8440587529881254`*^-11,-7.113767417423888`*^-12},{7.812275919434463`*^-11,-9.258978464162793`*^-12},{1.146163341192923`*^-10,-5.1001866987582436`*^-12},{1.0104176463794827`*^-10,-1.0273247289088511`*^-11},{6.551943326246531`*^-12,-1.6677254550059193`*^-11},{-8.01962514726135`*^-11,-1.747398507066038`*^-11},{2.227835096833122`*^-12,-1.3882558473897988`*^-11},{2.6867268179917357`*^-10,-7.010083058079738`*^-12},{2.986611168089537`*^-10,-4.54841724891596`*^-13},{-1.394651400668729`*^-10,2.5086568116409625`*^-12},{-8.751315755736458`*^-10,1.1257669968853607`*^-12},{-6.553461189472475`*^-10,2.103147534322925`*^-12},{8.678263271098738`*^-10,4.013191277164469`*^-12},{2.4003221636323394`*^-9,3.828311514901865`*^-12},{8.699410387006234`*^-10,1.4476768169308894`*^-12},{-4.190431530243973`*^-9,-4.655282352196118`*^-13},{-6.105196350114802`*^-9,-1.8661813707200674`*^-12},{6.795734505164376`*^-10,-2.7995567848402573`*^-12},{1.5328142037003583`*^-8,-2.0667390209604582`*^-12},{1.797614643579867`*^-8,-8.326440683925632`*^-13},{5.030522916875757`*^-10,1.517207086261573`*^-13},{-1.745405880986345`*^-8,5.497976259455417`*^-13},{-2.8689957949007307`*^-8,-4.596005786090612`*^-13},{-5.448740495823321`*^-9,-1.314369282388366`*^-12},{5.5164993934615`*^-10,-7.012551179696235`*^-13},{1.0364433098253146`*^-10,-3.7524614226426153`*^-13},{-8.541647664877574`*^-9,-2.011751608563318`*^-13},{-2.506190276371393`*^-10,-1.0806158827090515`*^-13},{2.8778561871942563`*^-9,-5.822481208812193`*^-14},{1.7617438965642894`*^-9,-3.1605363732709526`*^-14},{6.738146844033254`*^-11,-1.7404342234590687`*^-14},{-4.7871786408752226`*^-11,-9.721516718532534`*^-15},{1.7935689536877228`*^-10,-5.353775675375895`*^-15},{1.1139895126297358`*^-10,-2.7627710707350428`*^-15},{3.4817631428394013`*^-11,-1.1785022684630652`*^-15},{1.738472137931494`*^-11,-3.0825524129647897`*^-16},{-2.1345747858600082`*^-11,-2.5530363597610773`*^-17},{4.229393263938776`*^-13,-3.88465105647169`*^-17},{3.3728042069937284`*^-11,-8.323718703574787`*^-17},{5.4042499464495347`*^-11,-1.1112227358653811`*^-16},{5.367814960672751`*^-11,-8.722929927488141`*^-17},{2.7132279460361778`*^-11,-2.5035062700716783`*^-17},{1.5249472205307984`*^-11,1.4158600601146348`*^-17},{-2.1667181282414585`*^-11,4.26709377257072`*^-17},{-1.599652982785122`*^-11,4.1543756560723277`*^-17},{3.217341072155975`*^-11,2.449000873159089`*^-17},{2.1972849749791597`*^-11,4.448587187812889`*^-18},{-1.2775471153377663`*^-11,-6.915335956723932`*^-18},{-3.857997977789394`*^-12,-1.5030604383169675`*^-17}}]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#1"]]]}},{{},{}}},{DisplayFunction -> Identity,DisplayFunction -> Identity,AspectRatio -> NCache[
+Power[GoldenRatio,-1],0.6180339887498948`],Axes -> {True,True},AxesLabel -> {FormBox[
+TagBox["\"Human\"",HoldForm],TraditionalForm],FormBox[TagBox["\"AI\"",HoldForm],TraditionalForm]},AxesOrigin -> {0,0},RuleDelayed[
+DisplayFunction,Identity],Frame -> {{False,False},{False,False}},FrameLabel -> {{None,None},{None,None}},FrameTicks -> {{Automatic,Automatic},{Automatic,Automatic}},GridLines -> {None,None},GridLinesStyle -> Directive[
+GrayLevel[0.5`,0.4`]],Method -> {"AxisPadding" -> Scaled[0.02`],"DefaultBoundaryStyle" -> Automatic,"DefaultGraphicsInteraction" -> {"Version" -> 1.2`,"TrackMousePosition" -> {True,False},"Effects" -> {"Highlight" -> {"ratio" -> 2},"HighlightPoint" -> {"ratio" -> 2},"Droplines" -> {"freeformCursorMode" -> True,"placement" -> {"x" -> "All","y" -> "None"}}}},"DefaultMeshStyle" -> AbsolutePointSize[
+6],"DefaultPlotStyle" -> {Directive[RGBColor[0.24`,0.6`,0.8`],AbsoluteThickness[2]],Directive[
+RGBColor[0.95`,0.627`,0.1425`],AbsoluteThickness[2]],Directive[RGBColor[0.455`,0.7`,
+0.21`],AbsoluteThickness[2]],Directive[RGBColor[0.922526`,0.385626`,0.209179`],AbsoluteThickness[
+2]],Directive[RGBColor[0.578`,0.51`,0.85`],AbsoluteThickness[2]],Directive[RGBColor[
+0.772079`,0.431554`,0.102387`],AbsoluteThickness[2]],Directive[RGBColor[0.4`,0.64`,
+1.`],AbsoluteThickness[2]],Directive[RGBColor[1.`,0.75`,0.`],AbsoluteThickness[2]],Directive[
+RGBColor[0.8`,0.4`,0.76`],AbsoluteThickness[2]],Directive[RGBColor[0.637`,0.65`,0.`],
+AbsoluteThickness[2]],Directive[RGBColor[0.915`,0.3325`,0.2125`],AbsoluteThickness[
+2]],Directive[RGBColor[0.40082222609352647`,0.5220066643438841`,0.85`],AbsoluteThickness[
+2]],Directive[RGBColor[0.9728288904374106`,0.621644452187053`,0.07336199581899142`],
+AbsoluteThickness[2]],Directive[RGBColor[0.736782672705901`,0.358`,0.5030266573755369`],
+AbsoluteThickness[2]],Directive[RGBColor[0.28026441037696703`,0.715`,0.4292089322474965`],
+AbsoluteThickness[2]]},"DomainPadding" -> Scaled[0.02`],"RangePadding" -> Scaled[
+0.05`],"OptimizePlotMarkers" -> True,"IncludeHighlighting" -> "CurrentSet","HighlightStyle" -> Automatic,"OptimizePlotMarkers" -> True,"CoordinatesToolOptions" -> {"DisplayFunction" -> Function[
+{Function[Identity[Slot[1]]][Part[Slot[1],1]],Function[Identity[Slot[1]]][Part[Slot[
+1],2]]}],"CopiedValueFunction" -> Function[{Function[Identity[Slot[1]]][Part[Slot[
+1],1]],Function[Identity[Slot[1]]][Part[Slot[1],2]]}]}},PlotLabel -> FormBox["\"Phase Portrait: Human vs AI\"",
+TraditionalForm],PlotRange -> {{-1.4746897374790696`*^-9,1.3626716293817675`*^-9},{-3.28487606694042`*^-10,8.252985271235287`*^-6}},PlotRangeClipping -> True,PlotRangePadding -> {{Scaled[
+0.02`],Scaled[0.02`]},{Scaled[0.05`],Scaled[0.05`]}},Ticks -> {Automatic,Automatic}}],GraphicsBox[
+{{},{{{},{},TagBox[{Hue[0.67`,0.6`,0.6`],Directive[PointSize[NCache[Rational[1,72],
+0.013888888888888888`]],AbsoluteThickness[2],RGBColor[0,1,0]],LineBox[{{10.`,5.`},{0.008642345343891416`,7.728236528414595`},{3.590187950351197`*^-5,8.686961770717902`},{2.8466020900968564`*^-7,8.917812728309876`},{2.8799524620175034`*^-9,8.884560263143221`},{2.5783410541611513`*^-11,8.759647663352691`},{-3.6405803975366586`*^-10,8.604477552544193`},{-1.261991618243291`*^-9,8.440709773284029`},{-1.1592057269671283`*^-11,8.275987505538238`},{-9.454405468863585`*^-12,8.11300274652769`},{-2.964783483809268`*^-11,7.952686327921562`},{8.589175060022995`*^-11,7.795337373588915`},{5.674567163542911`*^-13,7.6410267282566044`},{-9.35332694668026`*^-12,7.4897424171932405`},{-4.569941462467024`*^-12,7.341442601371876`},{1.2707757202744904`*^-10,7.196075037180266`},{1.0603917904257637`*^-9,7.05358428261802`},{-4.791632878754475`*^-9,6.913914383849179`},{-4.219606000568818`*^-9,6.777009877672769`},{-6.854570210315917`*^-11,6.642816138649056`},{-1.0513173123822101`*^-9,6.5112797184654205`},{-4.107108772717158`*^-10,6.382347758692729`},{-1.4174270512056207`*^-9,6.255968852926932`},{-1.2119361236602756`*^-8,6.132092377658306`},{-8.534616762849125`*^-10,6.010668871946258`},{9.021392014117084`*^-10,5.891649736168927`},{-2.4989011284003843`*^-10,5.774987324527809`},{-4.106792249062556`*^-10,5.660634975101257`},{-4.1820589849504676`*^-10,5.548546854031853`},{-1.3270097927876676`*^-10,5.438678194280243`},{9.255204411167861`*^-11,5.330985110718341`},{6.504858675385236`*^-12,5.225424527163295`},{-2.1033162878371705`*^-10,5.121954191475167`},{-2.817500864202179`*^-10,5.0205327035304`},{-2.2692006344171193`*^-10,4.9211194975463375`},{-1.2543934019742696`*^-10,4.8236747931648285`},{9.325673717108242`*^-12,4.728159614945826`},{1.0371904344271046`*^-10,4.6345357698160665`},{-2.1019082558041925`*^-11,4.542765800806123`},{-1.042053652756854`*^-10,4.452812957419571`},{-1.8803604838058046`*^-11,4.364641374082449`},{2.1082548382089182`*^-11,4.278215649741957`},{-1.9660132906638292`*^-12,4.19350134326207`},{3.795602708795776`*^-11,4.110464439745799`},{4.2089853217169264`*^-11,4.029071851368283`},{-2.0630929807401035`*^-11,3.9492908719048945`},{-7.144261635641002`*^-12,3.87108972105728`},{-3.445479486504829`*^-12,3.794436999718871`},{-1.5010168845364946`*^-11,3.719302124717603`},{4.8895398431994845`*^-12,3.645655008291348`},{1.088307609795554`*^-11,3.5734661891384754`},{1.248806254612543`*^-12,3.502706822371716`},{2.8440587529881254`*^-11,3.4333485164015376`},{7.812275919434463`*^-11,3.365363717515955`},{1.146163341192923`*^-10,3.2987250312866916`},{1.0104176463794827`*^-10,3.233405880338453`},{6.551943326246531`*^-12,3.1693802254155616`},{-8.01962514726135`*^-11,3.1066222440137254`},{2.227835096833122`*^-12,3.0451070257118524`},{2.6867268179917357`*^-10,2.9848099116662525`},{2.986611168089537`*^-10,2.925706664645244`},{-1.394651400668729`*^-10,2.8677738404037285`},{-8.751315755736458`*^-10,2.8109881143596516`},{-6.553461189472475`*^-10,2.7553267881715193`},{8.678263271098738`*^-10,2.70076772052129`},{2.4003221636323394`*^-9,2.6472889014588374`},{8.699410387006234`*^-10,2.5948690686190914`},{-4.190431530243973`*^-9,2.5434872647117968`},{-6.105196350114802`*^-9,2.4931227964540756`},{6.795734505164376`*^-10,2.4437556883862075`},{1.5328142037003583`*^-8,2.39536610476332`},{1.797614643579867`*^-8,2.347934673208528`},{5.030522916875757`*^-10,2.3014424649586154`},{-1.745405880986345`*^-8,2.255870850720682`},{-2.8689957949007307`*^-8,2.2112016114188155`},{-5.448740495823321`*^-9,2.1674169220354287`},{5.5164993934615`*^-10,2.1244992011730908`},{1.0364433098253146`*^-10,2.082431315830251`},{-8.541647664877574`*^-9,2.0411964153096647`},{-2.506190276371393`*^-10,2.000778010426512`},{2.8778561871942563`*^-9,1.9611599625929848`},{1.7617438965642894`*^-9,1.922326402624376`},{6.738146844033254`*^-11,1.8842618114475038`},{-4.7871786408752226`*^-11,1.846950960702819`},{1.7935689536877228`*^-10,1.8103789111351145`},{1.1139895126297358`*^-10,1.7745310179233456`},{3.4817631428394013`*^-11,1.7393929339109089`},{1.738472137931494`*^-11,1.7049506189967532`},{-2.1345747858600082`*^-11,1.671190317987693`},{4.229393263938776`*^-13,1.6380985296614432`},{3.3728042069937284`*^-11,1.6056620051140933`},{5.4042499464495347`*^-11,1.5738677694759033`},{5.367814960672751`*^-11,1.5427031007369605`},{2.7132279460361778`*^-11,1.5121555262876114`},{1.5249472205307984`*^-11,1.48221283664826`},{-2.1667181282414585`*^-11,1.4528630527450654`},{-1.599652982785122`*^-11,1.4240944300355771`},{3.217341072155975`*^-11,1.3958954633360963`},{2.1972849749791597`*^-11,1.368254881234711`},{-1.2775471153377663`*^-11,1.3411616146685514`},{-3.857997977789394`*^-12,1.3146048429116408`}}]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#1"]]]}},{{},{}}},{DisplayFunction -> Identity,DisplayFunction -> Identity,AspectRatio -> NCache[
+Power[GoldenRatio,-1],0.6180339887498948`],Axes -> {True,True},AxesLabel -> {FormBox[
+TagBox["\"Human\"",HoldForm],TraditionalForm],FormBox[TagBox["\"Regulator\"",HoldForm],
+TraditionalForm]},AxesOrigin -> {0,0},RuleDelayed[DisplayFunction,Identity],Frame -> {{False,False},{False,False}},FrameLabel -> {{None,None},{None,None}},FrameTicks -> {{Automatic,Automatic},{Automatic,Automatic}},GridLines -> {None,None},GridLinesStyle -> Directive[
+GrayLevel[0.5`,0.4`]],Method -> {"AxisPadding" -> Scaled[0.02`],"DefaultBoundaryStyle" -> Automatic,"DefaultGraphicsInteraction" -> {"Version" -> 1.2`,"TrackMousePosition" -> {True,False},"Effects" -> {"Highlight" -> {"ratio" -> 2},"HighlightPoint" -> {"ratio" -> 2},"Droplines" -> {"freeformCursorMode" -> True,"placement" -> {"x" -> "All","y" -> "None"}}}},"DefaultMeshStyle" -> AbsolutePointSize[
+6],"DefaultPlotStyle" -> {Directive[RGBColor[0.24`,0.6`,0.8`],AbsoluteThickness[2]],Directive[
+RGBColor[0.95`,0.627`,0.1425`],AbsoluteThickness[2]],Directive[RGBColor[0.455`,0.7`,
+0.21`],AbsoluteThickness[2]],Directive[RGBColor[0.922526`,0.385626`,0.209179`],AbsoluteThickness[
+2]],Directive[RGBColor[0.578`,0.51`,0.85`],AbsoluteThickness[2]],Directive[RGBColor[
+0.772079`,0.431554`,0.102387`],AbsoluteThickness[2]],Directive[RGBColor[0.4`,0.64`,
+1.`],AbsoluteThickness[2]],Directive[RGBColor[1.`,0.75`,0.`],AbsoluteThickness[2]],Directive[
+RGBColor[0.8`,0.4`,0.76`],AbsoluteThickness[2]],Directive[RGBColor[0.637`,0.65`,0.`],
+AbsoluteThickness[2]],Directive[RGBColor[0.915`,0.3325`,0.2125`],AbsoluteThickness[
+2]],Directive[RGBColor[0.40082222609352647`,0.5220066643438841`,0.85`],AbsoluteThickness[
+2]],Directive[RGBColor[0.9728288904374106`,0.621644452187053`,0.07336199581899142`],
+AbsoluteThickness[2]],Directive[RGBColor[0.736782672705901`,0.358`,0.5030266573755369`],
+AbsoluteThickness[2]],Directive[RGBColor[0.28026441037696703`,0.715`,0.4292089322474965`],
+AbsoluteThickness[2]]},"DomainPadding" -> Scaled[0.02`],"RangePadding" -> Scaled[
+0.05`],"OptimizePlotMarkers" -> True,"IncludeHighlighting" -> "CurrentSet","HighlightStyle" -> Automatic,"OptimizePlotMarkers" -> True,"CoordinatesToolOptions" -> {"DisplayFunction" -> Function[
+{Function[Identity[Slot[1]]][Part[Slot[1],1]],Function[Identity[Slot[1]]][Part[Slot[
+1],2]]}],"CopiedValueFunction" -> Function[{Function[Identity[Slot[1]]][Part[Slot[
+1],1]],Function[Identity[Slot[1]]][Part[Slot[1],2]]}]}},PlotLabel -> FormBox["\"Phase Portrait: Human vs Regulator\"",
+TraditionalForm],PlotRange -> {{-1.4746897374790696`*^-9,1.3626716293817675`*^-9},{0,8.917812728309876`}},PlotRangeClipping -> True,PlotRangePadding -> {{Scaled[
+0.02`],Scaled[0.02`]},{Scaled[0.02`],Scaled[0.05`]}},Ticks -> {Automatic,Automatic}}]},{GraphicsBox[
+{{},{{{},{},TagBox[{Hue[0.67`,0.6`,0.6`],Directive[PointSize[NCache[Rational[1,72],
+0.013888888888888888`]],AbsoluteThickness[2],RGBColor[1,0.5`,0]],LineBox[{{50.`,5.`},{22.11733500483388`,7.728236528414595`},{8.152993378265792`,8.686961770717902`},{2.910010598393927`,8.917812728309876`},{1.033914113160835`,8.884560263143221`},{0.36927139477510007`,8.759647663352691`},{0.13302416474365583`,8.604477552544193`},{0.04838349072079566`,8.440709773284029`},{0.017772669436959217`,8.275987505538238`},{0.00659297532233687`,8.11300274652769`},{0.0024695690463568914`,7.952686327921562`},{9.33902008585071`*^-4,7.795337373588915`},{3.564872132380406`*^-4,7.6410267282566044`},{1.3732624037846806`*^-4,7.4897424171932405`},{5.337823406429247`*^-5,7.341442601371876`},{2.0931871337823444`*^-5,7.196075037180266`},{8.278361360908433`*^-6,7.05358428261802`},{3.3011923499313465`*^-6,6.913914383849179`},{1.3286644863322235`*^-6,6.777009877672769`},{5.386544924888442`*^-7,6.642816138649056`},{2.2202846752144487`*^-7,6.5112797184654205`},{9.070831080813561`*^-8,6.382347758692729`},{3.776328812993734`*^-8,6.255968852926932`},{1.5757758164003502`*^-8,6.132092377658306`},{6.983656560692652`*^-9,6.010668871946258`},{3.312347987232767`*^-9,5.891649736168927`},{1.5153123756657896`*^-9,5.774987324527809`},{5.649136515355854`*^-10,5.660634975101257`},{-8.637129036117967`*^-11,5.548546854031853`},{-3.28487606694042`*^-10,5.438678194280243`},{-2.1603992423325272`*^-10,5.330985110718341`},{-4.0528681644113596`*^-11,5.225424527163295`},{6.40797300414657`*^-11,5.121954191475167`},{9.293366178098132`*^-11,5.0205327035304`},{5.2623204335383756`*^-11,4.9211194975463375`},{-2.6634533841993275`*^-12,4.8236747931648285`},{-2.984821986284722`*^-11,4.728159614945826`},{-3.079041709922032`*^-11,4.6345357698160665`},{-1.757419385471845`*^-11,4.542765800806123`},{1.2260550257925385`*^-11,4.452812957419571`},{1.9115564961952454`*^-11,4.364641374082449`},{2.0662787233381358`*^-11,4.278215649741957`},{2.10019550758225`*^-11,4.19350134326207`},{5.6379137383957274`*^-12,4.110464439745799`},{-2.9309379475414234`*^-12,4.029071851368283`},{-3.815316143998755`*^-12,3.9492908719048945`},{-5.487830600504481`*^-12,3.87108972105728`},{1.50763325827602`*^-12,3.794436999718871`},{8.833085143092141`*^-12,3.719302124717603`},{6.635738314662017`*^-12,3.645655008291348`},{7.420577355649202`*^-12,3.5734661891384754`},{1.4097050395169358`*^-12,3.502706822371716`},{-7.113767417423888`*^-12,3.4333485164015376`},{-9.258978464162793`*^-12,3.365363717515955`},{-5.1001866987582436`*^-12,3.2987250312866916`},{-1.0273247289088511`*^-11,3.233405880338453`},{-1.6677254550059193`*^-11,3.1693802254155616`},{-1.747398507066038`*^-11,3.1066222440137254`},{-1.3882558473897988`*^-11,3.0451070257118524`},{-7.010083058079738`*^-12,2.9848099116662525`},{-4.54841724891596`*^-13,2.925706664645244`},{2.5086568116409625`*^-12,2.8677738404037285`},{1.1257669968853607`*^-12,2.8109881143596516`},{2.103147534322925`*^-12,2.7553267881715193`},{4.013191277164469`*^-12,2.70076772052129`},{3.828311514901865`*^-12,2.6472889014588374`},{1.4476768169308894`*^-12,2.5948690686190914`},{-4.655282352196118`*^-13,2.5434872647117968`},{-1.8661813707200674`*^-12,2.4931227964540756`},{-2.7995567848402573`*^-12,2.4437556883862075`},{-2.0667390209604582`*^-12,2.39536610476332`},{-8.326440683925632`*^-13,2.347934673208528`},{1.517207086261573`*^-13,2.3014424649586154`},{5.497976259455417`*^-13,2.255870850720682`},{-4.596005786090612`*^-13,2.2112016114188155`},{-1.314369282388366`*^-12,2.1674169220354287`},{-7.012551179696235`*^-13,2.1244992011730908`},{-3.7524614226426153`*^-13,2.082431315830251`},{-2.011751608563318`*^-13,2.0411964153096647`},{-1.0806158827090515`*^-13,2.000778010426512`},{-5.822481208812193`*^-14,1.9611599625929848`},{-3.1605363732709526`*^-14,1.922326402624376`},{-1.7404342234590687`*^-14,1.8842618114475038`},{-9.721516718532534`*^-15,1.846950960702819`},{-5.353775675375895`*^-15,1.8103789111351145`},{-2.7627710707350428`*^-15,1.7745310179233456`},{-1.1785022684630652`*^-15,1.7393929339109089`},{-3.0825524129647897`*^-16,1.7049506189967532`},{-2.5530363597610773`*^-17,1.671190317987693`},{-3.88465105647169`*^-17,1.6380985296614432`},{-8.323718703574787`*^-17,1.6056620051140933`},{-1.1112227358653811`*^-16,1.5738677694759033`},{-8.722929927488141`*^-17,1.5427031007369605`},{-2.5035062700716783`*^-17,1.5121555262876114`},{1.4158600601146348`*^-17,1.48221283664826`},{4.26709377257072`*^-17,1.4528630527450654`},{4.1543756560723277`*^-17,1.4240944300355771`},{2.449000873159089`*^-17,1.3958954633360963`},{4.448587187812889`*^-18,1.368254881234711`},{-6.915335956723932`*^-18,1.3411616146685514`},{-1.5030604383169675`*^-17,1.3146048429116408`}}]},
+Function[Annotation[Slot[1],"Charting`Private`Tag#1"]]]}},{{},{}}},{DisplayFunction -> Identity,DisplayFunction -> Identity,AspectRatio -> NCache[
+Power[GoldenRatio,-1],0.6180339887498948`],Axes -> {True,True},AxesLabel -> {FormBox[
+TagBox["\"AI\"",HoldForm],TraditionalForm],FormBox[TagBox["\"Regulator\"",HoldForm],
+TraditionalForm]},AxesOrigin -> {0,0},RuleDelayed[DisplayFunction,Identity],Frame -> {{False,False},{False,False}},FrameLabel -> {{None,None},{None,None}},FrameTicks -> {{Automatic,Automatic},{Automatic,Automatic}},GridLines -> {None,None},GridLinesStyle -> Directive[
+GrayLevel[0.5`,0.4`]],Method -> {"AxisPadding" -> Scaled[0.02`],"DefaultBoundaryStyle" -> Automatic,"DefaultGraphicsInteraction" -> {"Version" -> 1.2`,"TrackMousePosition" -> {True,False},"Effects" -> {"Highlight" -> {"ratio" -> 2},"HighlightPoint" -> {"ratio" -> 2},"Droplines" -> {"freeformCursorMode" -> True,"placement" -> {"x" -> "All","y" -> "None"}}}},"DefaultMeshStyle" -> AbsolutePointSize[
+6],"DefaultPlotStyle" -> {Directive[RGBColor[0.24`,0.6`,0.8`],AbsoluteThickness[2]],Directive[
+RGBColor[0.95`,0.627`,0.1425`],AbsoluteThickness[2]],Directive[RGBColor[0.455`,0.7`,
+0.21`],AbsoluteThickness[2]],Directive[RGBColor[0.922526`,0.385626`,0.209179`],AbsoluteThickness[
+2]],Directive[RGBColor[0.578`,0.51`,0.85`],AbsoluteThickness[2]],Directive[RGBColor[
+0.772079`,0.431554`,0.102387`],AbsoluteThickness[2]],Directive[RGBColor[0.4`,0.64`,
+1.`],AbsoluteThickness[2]],Directive[RGBColor[1.`,0.75`,0.`],AbsoluteThickness[2]],Directive[
+RGBColor[0.8`,0.4`,0.76`],AbsoluteThickness[2]],Directive[RGBColor[0.637`,0.65`,0.`],
+AbsoluteThickness[2]],Directive[RGBColor[0.915`,0.3325`,0.2125`],AbsoluteThickness[
+2]],Directive[RGBColor[0.40082222609352647`,0.5220066643438841`,0.85`],AbsoluteThickness[
+2]],Directive[RGBColor[0.9728288904374106`,0.621644452187053`,0.07336199581899142`],
+AbsoluteThickness[2]],Directive[RGBColor[0.736782672705901`,0.358`,0.5030266573755369`],
+AbsoluteThickness[2]],Directive[RGBColor[0.28026441037696703`,0.715`,0.4292089322474965`],
+AbsoluteThickness[2]]},"DomainPadding" -> Scaled[0.02`],"RangePadding" -> Scaled[
+0.05`],"OptimizePlotMarkers" -> True,"IncludeHighlighting" -> "CurrentSet","HighlightStyle" -> Automatic,"OptimizePlotMarkers" -> True,"CoordinatesToolOptions" -> {"DisplayFunction" -> Function[
+{Function[Identity[Slot[1]]][Part[Slot[1],1]],Function[Identity[Slot[1]]][Part[Slot[
+1],2]]}],"CopiedValueFunction" -> Function[{Function[Identity[Slot[1]]][Part[Slot[
+1],1]],Function[Identity[Slot[1]]][Part[Slot[1],2]]}]}},PlotLabel -> FormBox["\"Phase Portrait: AI vs Regulator\"",
+TraditionalForm],PlotRange -> {{-3.28487606694042`*^-10,8.252985271235287`*^-6},{0,8.917812728309876`}},PlotRangeClipping -> True,PlotRangePadding -> {{Scaled[
+0.02`],Scaled[0.02`]},{Scaled[0.02`],Scaled[0.05`]}},Ticks -> {Automatic,Automatic}}],""}},
+AutoDelete -> False,GridBoxItemSize -> {"Columns" -> {{Automatic}},"Rows" -> {{Automatic}}}],
+"Grid"],StandardForm],"Print",ExpressionUUID -> "6871c602-d851-43bb-97e6-430bda0a97d3"]},
+Open],ExpressionUUID -> "ca9bfb94-891f-46e3-ae95-28ac9797fe80"]},StyleDefinitions -> "Default.nb",
+FrontEndVersion -> "14.2 for Wolfram Cloud 1.70.1 (December 30, 2024)"]
